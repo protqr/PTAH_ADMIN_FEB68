@@ -10,7 +10,10 @@ const PostureSchema = new mongoose.Schema(
     },
     namePostures: String,
     noPostures: String,
-    Description: String,
+    isEvaluate: {
+      type: Boolean,
+      default: false,
+    },
     imageUrls: [String], // Changed from imageUrl: String
     videoUrls: [String], // Changed from videoUrl: String
     createdBy: {

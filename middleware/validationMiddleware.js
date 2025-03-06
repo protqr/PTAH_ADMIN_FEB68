@@ -117,7 +117,7 @@ export const validatePostureInput = withValidationErrors([
   body("namePostures")
     .notEmpty()
     .withMessage("โปรดกรอกชื่อท่ากายภาพให้ถูกต้อง"),
-  body("Description")
+  body("isEvaluate")
     .notEmpty()
     .withMessage("โปรดกรอกรายละเอียดท่ากายภาพให้ถูกต้อง"),
   body("userType")

@@ -105,108 +105,116 @@ const EditPosture = () => {
 
   return (
     <Wrapper>
-      <Form method='post' className='form' encType="multipart/form-data">
-        <h4 className='form-title'>แก้ไขข้อมูลท่ากายภาพ</h4>
-        <div className='form-center'>
+      <Form method="post" className="form" encType="multipart/form-data">
+        <h4 className="form-title">แก้ไขข้อมูลท่ากายภาพ</h4>
+        <div className="form-center">
           <FormRowSelect
-            labelText='ชื่อประเภทของท่ากายภาพบำบัด'
-            name='userType'
+            labelText="ชื่อประเภทของท่ากายภาพบำบัด"
+            name="userType"
             value={selectedUserType}
             onChange={handleUserTypeChange}
             list={Object.values(TYPEPOSTURES)}
           />
 
           <FormRow
-            type='text'
-            name='noPostures'
-            labelText='ท่าที่'
-            pattern='[0-9]*'
+            type="text"
+            name="noPostures"
+            labelText="ด่านที่"
+            pattern="[0-9]*"
             defaultValue={posture.noPostures}
           />
 
           <FormRow
-            type='text'
-            name='namePostures'
-            labelText='ชื่อท่ากายภาพ'
+            type="text"
+            name="namePostures"
+            labelText="ชื่อท่ากายภาพ"
             defaultValue={posture.namePostures}
           />
 
           <FormRow
-            type='textarea'
-            name='Description'
-            labelText='รายละเอียด'
-            defaultValue={posture.Description}
+            type="textarea"
+            name="isEvaluate"
+            labelText="ด่านนี้มีการประเมินไหม?"
+            defaultValue={posture.isEvaluate}
           />
 
-          <input type="hidden" name="imageUrls" value={imageUrls.join(',')} />
-          <input type="hidden" name="videoUrls" value={videoUrls.join(',')} />
+          <input type="hidden" name="imageUrls" value={imageUrls.join(",")} />
+          <input type="hidden" name="videoUrls" value={videoUrls.join(",")} />
 
-          <div className='form-row'>
-            <label className='form-label'>รูปภาพ</label>
+          <div className="form-row">
+            <label className="form-label">รูปภาพ</label>
             <input
-              type='file'
-              name='newImageUrls'
+              type="file"
+              name="newImageUrls"
               onChange={(e) => handleFileChange(e, setNewImageFiles)}
-              accept='image/*'
+              accept="image/*"
               multiple
             />
-            <div className='image-previews'>
+            <div className="image-previews">
               {imageUrls.map((url, index) => (
-                <div key={`image-${index}`} className='preview-container'>
-                  <img src={url} alt={`Image ${index}`} className='thumbnail' />
-                  <button 
-                    type='button' 
+                <div key={`image-${index}`} className="preview-container">
+                  <img src={url} alt={`Image ${index}`} className="thumbnail" />
+                  <button
+                    type="button"
                     onClick={() => removeFile(index, true)}
-                    className='remove-btn'
+                    className="remove-btn"
                   >
                     Remove
                   </button>
                 </div>
               ))}
               {newImageFiles.map((file, index) => (
-                <div key={`new-image-${index}`} className='preview-container'>
-                  <img src={URL.createObjectURL(file)} alt={`New Image ${index}`} className='thumbnail' />
+                <div key={`new-image-${index}`} className="preview-container">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`New Image ${index}`}
+                    className="thumbnail"
+                  />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className='form-row'>
-            <label className='form-label'>วิดีโอ</label>
+          <div className="form-row">
+            <label className="form-label">วิดีโอ</label>
             <input
-              type='file'
-              name='newVideoUrls'
+              type="file"
+              name="newVideoUrls"
               onChange={(e) => handleFileChange(e, setNewVideoFiles)}
-              accept='video/*'
+              accept="video/*"
               multiple
             />
-            <div className='video-previews'>
+            <div className="video-previews">
               {videoUrls.map((url, index) => (
-                <div key={`video-${index}`} className='preview-container'>
-                  <video src={url} className='thumbnail-video' controls />
-                  <button 
-                    type='button' 
+                <div key={`video-${index}`} className="preview-container">
+                  <video src={url} className="thumbnail-video" controls />
+                  <button
+                    type="button"
                     onClick={() => removeFile(index, false)}
-                    className='remove-btn'
+                    className="remove-btn"
                   >
                     Remove
                   </button>
                 </div>
               ))}
               {newVideoFiles.map((file, index) => (
-                <div key={`new-video-${index}`} className='preview-container'>
-                  <video src={URL.createObjectURL(file)} className='thumbnail-video' controls />
+                <div key={`new-video-${index}`} className="preview-container">
+                  <video
+                    src={URL.createObjectURL(file)}
+                    className="thumbnail-video"
+                    controls
+                  />
                 </div>
               ))}
             </div>
           </div>
 
           <button
-            type='submit'
-            className='btn btn-block form-btn'
+            type="submit"
+            className="btn btn-block form-btn"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'submitting...' : 'submit'}
+            {isSubmitting ? "submitting..." : "submit"}
           </button>
         </div>
       </Form>

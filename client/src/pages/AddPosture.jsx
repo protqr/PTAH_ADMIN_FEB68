@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FormRow, FormRowSelect } from "../assets/components";
+import { FormRow, FormRowSelect, FormRowRadioButton } from "../assets/components";
 import Wrapper from "../assets/wrappers/DashboardFormPage";
 import { TYPEPOSTURES } from "../../../utils/constants";
 import {
@@ -58,7 +58,7 @@ export const action = async ({ request }) => {
     const postureData = {
       noPostures: formData.get("noPostures"),
       namePostures: formData.get("namePostures"),
-      Description: formData.get("Description"),
+      isEvaluate: formData.get("isEvaluate"),
       userType: formData.get("userType"),
       imageUrls,
       videoUrls,
@@ -133,13 +133,13 @@ const AddPosture = () => {
           <FormRow
             type="text"
             name="noPostures"
-            labelText="ท่าที่"
+            labelText="ด่านที่"
             pattern="[0-9]*"
           />
 
           <FormRow type="text" name="namePostures" labelText="ชื่อท่ากายภาพ" />
 
-          <FormRow type="textarea" name="Description" labelText="รายละเอียด" />
+          <FormRow type="textarea" name="isEvaluate" labelText="ด่านนี้มีการประเมินไหม?" />
 
           <div className="form-row">
             <label htmlFor="images" className="form-label">

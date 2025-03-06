@@ -51,9 +51,9 @@ const AllPatient = () => {
   return (
     <AllPatientContext.Provider value={{ data, searchValues }}>
       <SearchContainer />
-      <AddButton onClick={() => navigate("/dashboard/add-user")}>
+      {/* <AddButton onClick={() => navigate("/dashboard/add-user")}>
         <b>+</b> เพิ่มผู้ป่วย
-      </AddButton>
+      </AddButton> */}
       <SoftDelete onClick={() => navigate("/dashboard/history-deleted-patient")}>
         <MdOutlineAutoDelete />
       </SoftDelete>

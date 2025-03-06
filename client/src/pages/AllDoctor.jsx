@@ -49,9 +49,9 @@ const AllDoctor = () => {
   return (
     <AllDoctorContext.Provider value={{ data }}>
       <SearchMPersonnel />
-      <AddButton onClick={() => navigate("/dashboard/add-doctor")}>
+      {/* <AddButton onClick={() => navigate("/dashboard/add-doctor")}>
         <b>+</b> เพิ่มข้อมูลแพทย์
-      </AddButton>
+      </AddButton> */}
       <SoftDelete onClick={() => navigate("/dashboard/history-deleted-doctor")}>
         <MdOutlineAutoDelete />
       </SoftDelete>

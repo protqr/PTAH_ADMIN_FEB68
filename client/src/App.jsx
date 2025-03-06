@@ -34,6 +34,7 @@ import {
   // AddAdmin,
   AllNotification,
   SoftDeleteNotification,
+  LinkHomeward
 } from "./pages";
 
 import { action as registerAction } from "./pages/Register";
@@ -240,8 +241,12 @@ const router = createBrowserRouter([
             path: "add-notification",
             element: <AddNotification />,
           },
-        ]
-      } 
+          {
+            path: "link-homeward",
+            element: <LinkHomeward />,
+          },
+        ],
+      },
     ],
   },
 ]);

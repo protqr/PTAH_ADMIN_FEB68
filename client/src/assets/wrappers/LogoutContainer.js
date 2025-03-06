@@ -2,6 +2,7 @@ import styled from 'styled-components';
 
 const Wrapper = styled.div`
   position: relative;
+  margin-left: 10px;
   .logout-btn {
     display: flex;
     align-items: center;
