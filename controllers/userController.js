@@ -46,12 +46,12 @@ export const getAllAdmin = async (req, res) => {
     queryObject.$or = [{ name: { $regex: search, $options: "i" } }];
   }
 
-const sortOptions = {
-  ใหม่ที่สุด: "-createdAt",
-  เก่าที่สุด: "createdAt",
-  "เรียงจาก ก-ฮ": "-name",
-  "เรียงจาก ฮ-ก": "name",
-};
+  const sortOptions = {
+    ใหม่ที่สุด: "-createdAt",
+    เก่าที่สุด: "createdAt",
+    "เรียงจาก ก-ฮ": "-name",
+    "เรียงจาก ฮ-ก": "name",
+  };
 
   const sortKey = sortOptions[sort] || sortOptions.ใหม่ที่สุด;
 
