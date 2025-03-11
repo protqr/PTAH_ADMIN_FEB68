@@ -28,16 +28,16 @@ const withValidationErrors = (validateValues) => {
         const errorMessages = errors.array().map((error) => error.msg);
         if (errorMessages[0].startsWith("no patient")) {
           // แสดง alert เมื่อไม่พบผู้ป่วย
-          alert("ไม่พบผู้ป่วย");
+          console.log("ไม่พบผู้ป่วย");
           throw new NotFoundError(errorMessages);
         }
         if (errorMessages[0].startsWith("not authorized")) {
           // แสดง alert เมื่อไม่ได้รับอนุญาตให้เข้าถึงเส้นทางนี้
-          alert("ไม่ได้รับอนุญาตให้เข้าถึงเส้นทางนี้");
+          console.log("ไม่ได้รับอนุญาตให้เข้าถึงเส้นทางนี้");
           throw new UnauthorizedError("not authorized to access this route");
         }
         // แสดง alert เมื่อข้อมูลไม่ถูกต้อง
-        alert("ข้อมูลไม่ถูกต้อง");
+        console.log("ข้อมูลไม่ถูกต้อง");
         throw new BadRequestError(errorMessages);
       }
       next();
@@ -160,12 +160,11 @@ export const validateIdParam = withValidationErrors([
     if (!isValidId) throw new BadRequestError("invalid MongoDB id");
     const patient = await Patient.findById(value);
     if (!patient) throw new NotFoundError(`no patient with id : ${value}`);
-    const isAdmin = req.user.role === "admin";
-    const isOwner = req.user.userId === patient.createdBy.toString();
-    if (!isAdmin && !isOwner)
-      throw new UnauthorizedError("not authorized to access this route");
+    return true;
   }),
 ]);
+
+
 
 export const validateIdParam2 = withValidationErrors([
   param("_id").custom(async (value, { req }) => {
@@ -173,10 +172,6 @@ export const validateIdParam2 = withValidationErrors([
     if (!isValidId) throw new BadRequestError("invalid MongoDB id");
     const posture = await Posture.findById(value);
     if (!posture) throw new NotFoundError(`no posture with id : ${value}`);
-    const isAdmin = req.user.role === "admin";
-    const isOwner = req.user.userId === posture.createdBy.toString();
-    if (!isAdmin && !isOwner)
-      throw new UnauthorizedError("not authorized to access this route");
   }),
 ]);
 
@@ -186,10 +181,6 @@ export const validateIdParam3 = withValidationErrors([
     if (!isValidId) throw new BadRequestError("invalid MongoDB id");
     const doctor = await Doctor.findById(value);
     if (!doctor) throw new NotFoundError(`no doctor with id : ${value}`);
-    const isAdmin = req.user.role === "admin";
-    const isOwner = req.user.userId === doctor.createdBy.toString();
-    if (!isAdmin && !isOwner)
-      throw new UnauthorizedError("not authorized to access this route");
   }),
 ]);
 
@@ -199,10 +190,6 @@ export const validateIdParam4 = withValidationErrors([
     if (!isValidId) throw new BadRequestError("invalid MongoDB id");
     const admin = await User.findById(value);
     if (!admin) throw new NotFoundError(`no admin with id : ${value}`);
-    const isAdmin = req.user.role === "admin";
-    const isOwner = req.user.userId === admin.createdBy.toString();
-    if (!isAdmin && !isOwner)
-      throw new UnauthorizedError("not authorized to access this route");
   }),
 ]);
 
@@ -212,10 +199,6 @@ export const validateIdParam5 = withValidationErrors([
     if (!isValidId) throw new BadRequestError("invalid MongoDB id");
     const post = await Post.findById(value);
     if (!post) throw new NotFoundError(`no post with id : ${value}`);
-    const isAdmin = req.user.role === "admin";
-    const isOwner = req.user.userId === post.createdBy.toString();
-    if (!isAdmin && !isOwner)
-      throw new UnauthorizedError("not authorized to access this route");
   }),
 ]);
 

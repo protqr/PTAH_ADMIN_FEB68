@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import User from "../models/UserModel.js";
 import Patient from "../models/PatientModel.js";
+import Users from "../models/UsersModel.js";
 
 export const getCurrentUser = async (req, res) => {
   const user = await User.findOne({ _id: req.user.userId });
@@ -118,7 +119,7 @@ export const deleteAdmin = async (req, res) => {
   try {
     const updatedAdmin = await User.findByIdAndUpdate(
       _id,
-      { isDeleted: true },
+      { isDeleted: true, deletedAt: new Date(), },
       { new: true }
     );
 
@@ -130,5 +131,15 @@ export const deleteAdmin = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+  }
+};
+
+export const getPhysicalTherapyUsers = async (req, res) => {
+  try {
+    // ดึงเฉพาะผู้ใช้ที่มี physicalTherapy = true
+    const users = await Users.find({ physicalTherapy: true });
+    res.status(StatusCodes.OK).json(users);
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
   }
 };
