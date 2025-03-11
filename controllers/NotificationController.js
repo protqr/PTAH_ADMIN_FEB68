@@ -164,7 +164,7 @@ export const deleteNotification = async (req, res) => {
 
     const notiItem = await NotificationModel.findByIdAndUpdate(
       _id,
-      { isDeleted: true },
+      { isDeleted: true, deletedAt: new Date(), },
       { new: true }
     );
 

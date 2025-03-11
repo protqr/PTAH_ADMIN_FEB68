@@ -24,6 +24,15 @@ const PostureSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+      // กำหนด TTL index ที่จะลบเอกสารหลัง 30 วัน (2592000 วินาที)
+      index: {
+        expireAfterSeconds: 2592000, // 30 days
+        partialFilterExpression: { isDeleted: true },
+      },
+    },
   },
   { timestamps: true }
 );

@@ -168,7 +168,7 @@ export const deletePosture = async (req, res) => {
   try {
     const updatedPosture = await Posture.findByIdAndUpdate(
       _id,
-      { isDeleted: true },
+      { isDeleted: true, deletedAt: new Date(), },
       { new: true }
     );
 

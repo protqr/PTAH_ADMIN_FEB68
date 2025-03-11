@@ -102,7 +102,8 @@ export const deleteDoctor = async (req, res) => {
   try {
     const updatedDoctor = await Doctor.findByIdAndUpdate(
       _id,
-      { isDeleted: true },
+      { isDeleted: true, deletedAt: new Date(), },
+    
       { new: true }
     );
 

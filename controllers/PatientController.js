@@ -142,7 +142,7 @@ export const deletePatient = async (req, res) => {
   try {
     const updatedPatients = await Patient.findByIdAndUpdate(
       _id,
-      { isDeleted: true },
+      { isDeleted: true, deletedAt: new Date(), },
       { new: true }
     );
 

@@ -10,6 +10,7 @@ import {
   createAdmin,
   updateAdmin,
   deleteAdmin,
+  getPhysicalTherapyUsers,
 } from "../controllers/userController.js";
 import {
   validateUpdateUserInput,
@@ -23,7 +24,7 @@ router.get("/admin/app-stats", [
   getApplicationStats,
 ]);
 router.patch("/update-user", validateUpdateUserInput, updateUser);
-
+router.get("/physical-therapy", getPhysicalTherapyUsers);
 router.route("/").get(getAllAdmin).post(createAdmin);
 
 router
