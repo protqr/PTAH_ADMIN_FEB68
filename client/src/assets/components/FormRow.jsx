@@ -1,4 +1,4 @@
-const FormRow = ({ type, name, labelText, defaultValue, onChange }) => {
+const FormRow = ({ type, name, labelText, defaultValue, value, onChange }) => {
   if (type === "textarea") {
     return (
       <div className="form-row">
@@ -9,13 +9,19 @@ const FormRow = ({ type, name, labelText, defaultValue, onChange }) => {
           id={name}
           name={name}
           className="form-input"
-          defaultValue={defaultValue || ""}
+          defaultValue={defaultValue}
+          value={value}
           onChange={onChange}
           required
         />
       </div>
     );
   }
+
+  // Use controlled component if value and onChange are provided, otherwise use uncontrolled with defaultValue
+  const inputProps = value !== undefined && onChange 
+    ? { value, onChange } 
+    : { defaultValue: defaultValue || "" };
 
   return (
     <div className="form-row">
@@ -27,8 +33,7 @@ const FormRow = ({ type, name, labelText, defaultValue, onChange }) => {
         id={name}
         name={name}
         className="form-input"
-        defaultValue={defaultValue || ""}
-        onChange={onChange}
+        {...inputProps}
         required
       />
     </div>

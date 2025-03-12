@@ -62,7 +62,7 @@ import { action as deleteAdminAction } from "./pages/DeleteAdmin";
 // import { loader as allpostLoader } from "./pages/BlogManage";
 // import { action as deletePostAction } from "./pages/DeletePost";
 import { loader as allNotificationLoader } from "./pages/AllNotification";
-import { loader as editNotificationLoader } from "./pages/AddNotification";
+import { loader as editNotificationLoader, action as editNotificationAction } from "./pages/AddNotification";
 
 
 
@@ -185,11 +185,13 @@ const router = createBrowserRouter([
           {
             path: "add-notification",
             element: <AddNotification />,
+            action: editNotificationAction
           },
           {
             path: "edit-notification/:_id",
             element: <AddNotification />,
             loader: editNotificationLoader,
+            action: editNotificationAction
           },
           {
             path: "delete-admin/:_id",
@@ -236,10 +238,6 @@ const router = createBrowserRouter([
           {
             path: "history-deleted-notification",
             element: <SoftDeleteNotification />,
-          },
-          {
-            path: "add-notification",
-            element: <AddNotification />,
           },
           {
             path: "link-homeward",
