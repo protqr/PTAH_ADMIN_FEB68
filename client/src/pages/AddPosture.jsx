@@ -45,7 +45,7 @@ export const action = async ({ request }) => {
     const submission = {
       name: missionName,
       postureType,
-      evaluate: evaluateText === "ประเมิน",
+      isEvaluated: isEvaluateText === "ประเมิน",
       imageUrl,
       videoUrl,
     };
