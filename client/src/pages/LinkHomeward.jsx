@@ -1,21 +1,22 @@
-import { FaUserCircle, FaCaretDown } from "react-icons/fa";
 import Wrapper from "../assets/wrappers/LogoutContainer";
-import { useState } from "react";
 import { useDashboardContext } from "../pages/DashboardLayout";
 
 const LinkHomeward = () => {
+  const { user } = useDashboardContext(); // ดึงข้อมูลผู้ใช้จาก Context
+  const userId = user?.id || "guest"; // ใช้ user.id ถ้ามี ถ้าไม่มีให้เป็น "guest"
 
   return (
     <Wrapper>
-      <button
-        type="button"
+      <a
+        href={`https://homeward.vercel.app/?userId=${userId}`}
+        target="_blank"
+        rel="noopener noreferrer"
         className="btn logout-btn"
-        onClick={() => setShowLogout(!showLogout)}
       >
-        {/* <FaUserCircle /> */}
         เว็บ Homeward
-      </button>
+      </a>
     </Wrapper>
   );
 };
+
 export default LinkHomeward;
