@@ -88,7 +88,7 @@ export const createMissionWithSubmissions = async (req, res) => {
       name: submissionsData[0].name,
       videoUrl: submissionsData[0].videoUrl || "",
       imageUrl: submissionsData[0].imageUrl || "",
-      isEvaluated: submissionsData[0].isEvaluated
+      evaluate: submissionsData[0].evaluate,
     };
     
     const submission = await Submission.create(submissionToCreate);

@@ -42,16 +42,16 @@ export const login = async (req, res) => {
   const user = await User.findOne({ username: req.body.username });
   if (!user) {
     console.log("user not found");
-    throw new UnauthenticatedError("ไม่สามารถเข้าสู่ระบบได้");
+    throw new UnauthenticatedError("ชื่อผู้ใช้ไม่ถูกต้อง");
   }
 
   const isValidUser = await comparePassword(req.body.password, user.password);
   if (!isValidUser) {
     console.log("Invalid password");
-    throw new UnauthenticatedError("ไม่สามารถเข้าสู่ระบบได้");
+    throw new UnauthenticatedError("รหัสผ่านไม่ถูกต้อง");
   }
 
-  const token = createJWT({ userId: user._id});
+  const token = createJWT({ userId: user._id });
   res.cookie("token", token, {
     httpOnly: true,
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
@@ -66,5 +66,5 @@ export const logout = (req, res) => {
     httpOnly: true,
     expires: new Date(Date.now()),
   });
-  res.status(StatusCodes.OK).json({ msg: "user logged out!" });
+  res.status(StatusCodes.OK).json({ msg: "ออกจากระบบสำเร็จ" });
 };
