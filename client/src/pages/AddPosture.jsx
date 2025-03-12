@@ -30,6 +30,9 @@ export const action = async ({ request }) => {
     const noString = formData.get("no");               // ด่านที่ (1..5)
     const isEvaluateText = formData.get("isEvaluate"); // "ประเมิน" หรือ "ไม่ประเมิน"
 
+    console.log("isEvaluateText:", isEvaluateText);
+    console.log("isEvaluateText === 'ประเมิน':", isEvaluateText === "ประเมิน");
+
     // Handle file uploads
     const imageFile = formData.get("imageUrl");
     const videoFile = formData.get("videoUrl");
@@ -42,10 +45,11 @@ export const action = async ({ request }) => {
       : "";
 
     // Prepare submission data
+    const isEvaluated = isEvaluateText === "ประเมิน";
     const submission = {
       name: missionName,
       postureType,
-      isEvaluated: isEvaluateText === "ประเมิน",
+      evaluate: isEvaluated,
       imageUrl,
       videoUrl,
     };
@@ -54,12 +58,16 @@ export const action = async ({ request }) => {
     const missionData = {
       no: noString,
       name: postureType,
-      isEvaluate: isEvaluateText === "ประเมิน",
+      isEvaluate: isEvaluated,
       submissionsData: [submission] // This will be used to create the submission
     };
 
+    console.log("Submission data:", submission);
+    console.log("Mission data:", missionData);
+
     // Create both mission and submission using the combined endpoint
     const response = await customFetch.post("/missions/create-with-sub", missionData);
+    console.log("Server response:", response.data);
     
     toast.success("สร้างท่ากายภาพ/mission เรียบร้อยแล้ว");
     return redirect("/dashboard/all-posture");

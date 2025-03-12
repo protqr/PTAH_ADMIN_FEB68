@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FormRow, FormRowSelect } from '../assets/components';
+import { FormRow } from '../assets/components';
 import Wrapper from '../assets/wrappers/DashboardFormPage';
 import { useLoaderData } from 'react-router-dom';
 import { TYPEPOSTURES } from '../../../utils/constants';
@@ -15,7 +15,7 @@ export const loader = async ({ params }) => {
     if (!_id) {
       throw new Error('Invalid ID');
     }
-    const { data } = await customFetch.get(`/postures/${_id}`);
+    const { data } = await customFetch.get(`/missions/${_id}`);
     return data;
   } catch (error) {
     toast.error(error.response.data.msg);
@@ -48,29 +48,46 @@ export const action = async ({ request, params }) => {
       throw new Error('Invalid ID');
     }
 
-    // Handle existing URLs
-    data.imageUrls = data.imageUrls ? data.imageUrls.split(',').filter(url => url.trim() !== '') : [];
-    data.videoUrls = data.videoUrls ? data.videoUrls.split(',').filter(url => url.trim() !== '') : [];
+    // Prepare mission data (removed type field)
+    const missionData = {
+      name: data.name,
+      no: data.no,
+      isEvaluate: data.isEvaluate === "ประเมิน"
+    };
 
-    // Handle new files
-    const newImageFiles = formData.getAll('newImageUrls').filter(file => file.size > 0);
-    const newVideoFiles = formData.getAll('newVideoUrls').filter(file => file.size > 0);
+    // Prepare submissions data
+    const submissionUpdates = formData.getAll('submissionIds').map((id, index) => ({
+      _id: id,
+      name: formData.getAll('submissionNames')[index],
+      evaluate: formData.getAll('submissionEvaluates')[index] === "true",
+      imageUrl: formData.getAll('submissionImageUrls')[index] || "",
+      videoUrl: formData.getAll('submissionVideoUrls')[index] || ""
+    }));
 
-    // Upload new files
-    const newImageUrls = await uploadFilesToFirebase(newImageFiles, `postures/${_id}/images`);
-    const newVideoUrls = await uploadFilesToFirebase(newVideoFiles, `postures/${_id}/videos`);
+    // Handle new files for each submission
+    for (let i = 0; i < submissionUpdates.length; i++) {
+      const submissionId = submissionUpdates[i]._id;
+      const newImages = formData.getAll(`newImageUrls_${submissionId}`).filter(file => file.size > 0);
+      const newVideos = formData.getAll(`newVideoUrls_${submissionId}`).filter(file => file.size > 0);
 
-    // Combine existing and new URLs
-    data.imageUrls = [...data.imageUrls, ...newImageUrls];
-    data.videoUrls = [...data.videoUrls, ...newVideoUrls];
+      if (newImages.length > 0) {
+        const newImageUrls = await uploadFilesToFirebase(newImages, `missions/${_id}/submissions/${submissionId}/images`);
+        submissionUpdates[i].imageUrl = newImageUrls[0];
+      }
 
-    // Convert isEvaluate from Thai string to boolean
-    data.isEvaluate = data.isEvaluate === "ประเมิน";
+      if (newVideos.length > 0) {
+        const newVideoUrls = await uploadFilesToFirebase(newVideos, `missions/${_id}/submissions/${submissionId}/videos`);
+        submissionUpdates[i].videoUrl = newVideoUrls[0];
+      }
+    }
 
-    console.log("Data being sent to server:", data);
+    // Update mission and submissions
+    await customFetch.patch(`/missions/${_id}`, {
+      ...missionData,
+      submissionUpdates
+    });
 
-    await customFetch.patch(`/postures/${_id}`, data);
-    toast.success('แก้ไขข้อมูลท่ากายภาพเรียบร้อยแล้ว');
+    toast.success('แก้ไขข้อมูลภารกิจและท่าเรียบร้อยแล้ว');
     return redirect('/dashboard/all-posture');
   } catch (error) {
     console.error("Error in action:", error);
@@ -80,176 +97,226 @@ export const action = async ({ request, params }) => {
 };
 
 const EditPosture = () => {
-  const { posture } = useLoaderData();
+  const { mission } = useLoaderData();
   const navigation = useNavigate();
   const isSubmitting = navigation.state === 'submitting';
-  const [selectedUserType, setSelectedUserType] = useState(posture.userType || '');
-  const [imageUrls, setImageUrls] = useState(posture.imageUrls || []);
-  const [videoUrls, setVideoUrls] = useState(posture.videoUrls || []);
-  const [newImageFiles, setNewImageFiles] = useState([]);
-  const [newVideoFiles, setNewVideoFiles] = useState([]);
-  const [isEvaluate, setIsEvaluate] = useState(posture.isEvaluate ? "ประเมิน" : "ไม่ประเมิน");
-
-  const handleUserTypeChange = (event) => {
-    setSelectedUserType(event.target.value);
-  };
+  const [isEvaluate, setIsEvaluate] = useState(mission.isEvaluate ? "ประเมิน" : "ไม่ประเมิน");
+  const [submissions, setSubmissions] = useState(mission.submission || []);
 
   const handleIsEvaluateChange = (event) => {
     setIsEvaluate(event.target.value);
   };
 
-  const removeFile = (index, isImage) => {
-    if (isImage) {
-      setImageUrls(prev => prev.filter((_, i) => i !== index));
-    } else {
-      setVideoUrls(prev => prev.filter((_, i) => i !== index));
-    }
+  const handleSubmissionChange = (index, field, value) => {
+    const updatedSubmissions = [...submissions];
+    updatedSubmissions[index] = { ...updatedSubmissions[index], [field]: value };
+    setSubmissions(updatedSubmissions);
   };
 
-  const handleFileChange = (e, setFiles) => {
-    const files = Array.from(e.target.files);
-    setFiles(prevFiles => [...prevFiles, ...files]);
+  const handleFileChange = (submissionId, type, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Preview will be handled by the existing preview elements
+    const submission = submissions.find(s => s._id === submissionId);
+    if (submission) {
+      handleSubmissionChange(
+        submissions.indexOf(submission),
+        type === 'image' ? 'imageUrl' : 'videoUrl',
+        URL.createObjectURL(file)
+      );
+    }
   };
 
   return (
     <Wrapper>
       <Form method="post" className="form" encType="multipart/form-data">
-        <h4 className="form-title">แก้ไขข้อมูลท่ากายภาพ</h4>
-        <div className="form-center">
-          <FormRowSelect
-            labelText="ชื่อประเภทของท่ากายภาพบำบัด"
-            name="userType"
-            value={selectedUserType}
-            onChange={handleUserTypeChange}
-            list={Object.values(TYPEPOSTURES)}
-          />
+        <div className="mission-section">
+          <h4 className="form-title">แก้ไขข้อมูลภารกิจ</h4>
+          <div className="form-center">
+            {/* Mission Fields */}
+            <div className="mission-fields" style={{ 
+              backgroundColor: 'var(--background-secondary-color)',
+              padding: '2rem',
+              borderRadius: 'var(--border-radius)',
+              marginBottom: '2rem'
+            }}>
+              <h5 style={{ marginBottom: '1.5rem', color: 'var(--primary-500)' }}>ข้อมูลภารกิจ</h5>
 
-          <FormRow
-            type="text"
-            name="noPostures"
-            labelText="ด่านที่"
-            pattern="[0-9]*"
-            defaultValue={posture.noPostures}
-          />
+              <FormRow
+                type="text"
+                name="name"
+                labelText="ชื่อภารกิจ"
+                defaultValue={mission.name}
+              />
 
-          <FormRow
-            type="text"
-            name="namePostures"
-            labelText="ชื่อท่ากายภาพ"
-            defaultValue={posture.namePostures}
-          />
+              <FormRow
+                type="number"
+                name="no"
+                labelText="ด่านที่"
+                defaultValue={mission.no}
+              />
 
-          {/* Replace text input with radio buttons for isEvaluate */}
-          <div className="form-row">
-            <label className="form-label required">การประเมิน</label>
-            <div className="radio-group evaluate-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="isEvaluate"
-                  value="ประเมิน"
-                  className="radio-input"
-                  checked={isEvaluate === "ประเมิน"}
-                  onChange={handleIsEvaluateChange}
-                  required
-                />
-                <span className="radio-custom" />
-                <span className="radio-text">ประเมิน</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="isEvaluate"
-                  value="ไม่ประเมิน"
-                  className="radio-input"
-                  checked={isEvaluate === "ไม่ประเมิน"}
-                  onChange={handleIsEvaluateChange}
-                />
-                <span className="radio-custom" />
-                <span className="radio-text">ไม่ประเมิน</span>
-              </label>
-            </div>
-          </div>
-
-          <input type="hidden" name="imageUrls" value={imageUrls.join(",")} />
-          <input type="hidden" name="videoUrls" value={videoUrls.join(",")} />
-
-          <div className="form-row">
-            <label className="form-label">รูปภาพ</label>
-            <input
-              type="file"
-              name="newImageUrls"
-              onChange={(e) => handleFileChange(e, setNewImageFiles)}
-              accept="image/*"
-              multiple
-            />
-            <div className="image-previews">
-              {imageUrls.map((url, index) => (
-                <div key={`image-${index}`} className="preview-container">
-                  <img src={url} alt={`Image ${index}`} className="thumbnail" />
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index, true)}
-                    className="remove-btn"
-                  >
-                    Remove
-                  </button>
+              <div className="form-row">
+                <label className="form-label required">การประเมิน</label>
+                <div className="radio-group evaluate-group">
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="isEvaluate"
+                      value="ประเมิน"
+                      className="radio-input"
+                      checked={isEvaluate === "ประเมิน"}
+                      onChange={handleIsEvaluateChange}
+                      required
+                    />
+                    <span className="radio-custom" />
+                    <span className="radio-text">ประเมิน</span>
+                  </label>
+                  <label className="radio-label">
+                    <input
+                      type="radio"
+                      name="isEvaluate"
+                      value="ไม่ประเมิน"
+                      className="radio-input"
+                      checked={isEvaluate === "ไม่ประเมิน"}
+                      onChange={handleIsEvaluateChange}
+                    />
+                    <span className="radio-custom" />
+                    <span className="radio-text">ไม่ประเมิน</span>
+                  </label>
                 </div>
-              ))}
-              {newImageFiles.map((file, index) => (
-                <div key={`new-image-${index}`} className="preview-container">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`New Image ${index}`}
-                    className="thumbnail"
+              </div>
+            </div>
+
+            {/* Submissions Section */}
+            <div className="submissions-section" style={{
+              backgroundColor: 'var(--background-secondary-color)',
+              padding: '2rem',
+              borderRadius: 'var(--border-radius)'
+            }}>
+              <h5 style={{ 
+                marginBottom: '1.5rem', 
+                color: 'var(--primary-500)',
+                borderBottom: '2px solid var(--primary-300)',
+                paddingBottom: '0.5rem'
+              }}>ท่ากายภาพในภารกิจ</h5>
+              
+              {submissions.map((submission, index) => (
+                <div key={submission._id} className="submission-item" style={{
+                  border: '1px solid var(--grey-100)',
+                  borderRadius: 'var(--border-radius)',
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem',
+                  backgroundColor: 'var(--white)'
+                }}>
+                  <h6 style={{ 
+                    marginBottom: '1rem',
+                    color: 'var(--primary-400)'
+                  }}>ท่าที่ {index + 1}</h6>
+                  
+                  <input type="hidden" name="submissionIds" value={submission._id} />
+                  
+                  <FormRow
+                    type="text"
+                    name="submissionNames"
+                    labelText={`ชื่อท่า`}
+                    defaultValue={submission.name}
+                    onChange={(e) => handleSubmissionChange(index, 'name', e.target.value)}
                   />
+
+                  <div className="form-row">
+                    <label className="form-label">การประเมิน</label>
+                    <input
+                      type="hidden"
+                      name="submissionEvaluates"
+                      value={submission.evaluate}
+                    />
+                    <div className="radio-group">
+                      <label className="radio-label">
+                        <input
+                          type="radio"
+                          value="true"
+                          checked={submission.evaluate}
+                          onChange={() => handleSubmissionChange(index, 'evaluate', true)}
+                        />
+                        <span className="radio-text">ประเมิน</span>
+                      </label>
+                      <label className="radio-label">
+                        <input
+                          type="radio"
+                          value="false"
+                          checked={!submission.evaluate}
+                          onChange={() => handleSubmissionChange(index, 'evaluate', false)}
+                        />
+                        <span className="radio-text">ไม่ประเมิน</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="media-section">
+                    <div className="form-row">
+                      <label className="form-label">รูปภาพ</label>
+                      <input
+                        type="file"
+                        name={`newImageUrls_${submission._id}`}
+                        onChange={(e) => handleFileChange(submission._id, 'image', e)}
+                        accept="image/*"
+                      />
+                      <input
+                        type="hidden"
+                        name="submissionImageUrls"
+                        value={submission.imageUrl || ""}
+                      />
+                      {submission.imageUrl && (
+                        <div className="preview-container">
+                          <img
+                            src={submission.imageUrl}
+                            alt="Preview"
+                            style={{ maxWidth: '200px', marginTop: '1rem' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-row">
+                      <label className="form-label">วิดีโอ</label>
+                      <input
+                        type="file"
+                        name={`newVideoUrls_${submission._id}`}
+                        onChange={(e) => handleFileChange(submission._id, 'video', e)}
+                        accept="video/*"
+                      />
+                      <input
+                        type="hidden"
+                        name="submissionVideoUrls"
+                        value={submission.videoUrl || ""}
+                      />
+                      {submission.videoUrl && (
+                        <div className="preview-container">
+                          <video
+                            src={submission.videoUrl}
+                            controls
+                            style={{ maxWidth: '200px', marginTop: '1rem' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="form-row">
-            <label className="form-label">วิดีโอ</label>
-            <input
-              type="file"
-              name="newVideoUrls"
-              onChange={(e) => handleFileChange(e, setNewVideoFiles)}
-              accept="video/*"
-              multiple
-            />
-            <div className="video-previews">
-              {videoUrls.map((url, index) => (
-                <div key={`video-${index}`} className="preview-container">
-                  <video src={url} className="thumbnail-video" controls />
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index, false)}
-                    className="remove-btn"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              {newVideoFiles.map((file, index) => (
-                <div key={`new-video-${index}`} className="preview-container">
-                  <video
-                    src={URL.createObjectURL(file)}
-                    className="thumbnail-video"
-                    controls
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-block form-btn"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "submitting..." : "submit"}
-          </button>
         </div>
+
+        <button
+          type="submit"
+          className="btn btn-block form-btn"
+          disabled={isSubmitting}
+          style={{ marginTop: '2rem' }}
+        >
+          {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+        </button>
       </Form>
     </Wrapper>
   );

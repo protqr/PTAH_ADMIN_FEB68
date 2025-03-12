@@ -7,7 +7,9 @@ const SubmissionSchema = new mongoose.Schema(
     videoUrl: { type: String, default: "" },
     imageUrl: { type: String, default: "" },
     // บางครั้งจะมีการประเมิน submission
-    isEvaluated: { type: Boolean, default: false },
+    evaluate: { type: Boolean, default: false },
+    // สถานะการลบ (soft delete)
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

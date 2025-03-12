@@ -114,6 +114,112 @@ const Wrapper = styled.section`
     color: #0f5132;
   }
 
+  margin-top: 4rem;
+  h2 {
+    text-transform: none;
+  }
+  & > h5 {
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+
+  .missions-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+  }
+
+  .mission-card {
+    background: var(--background-secondary-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-2);
+  }
+
+  .mission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    h3 {
+      margin: 0;
+      color: var(--primary-500);
+    }
+  }
+
+  .mission-actions {
+    display: flex;
+    gap: 0.5rem;
+    
+    .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: var(--border-radius);
+    }
+
+    .edit-btn {
+      background: var(--primary-500);
+      color: white;
+    }
+
+    .delete-btn {
+      background: var(--red-dark);
+      color: white;
+    }
+  }
+
+  .mission-details {
+    margin-bottom: 1.5rem;
+    p {
+      margin: 0.5rem 0;
+    }
+  }
+
+  .submissions-section {
+    border-top: 1px solid var(--grey-100);
+    padding-top: 1rem;
+    
+    h4 {
+      color: var(--primary-500);
+      margin-bottom: 1rem;
+    }
+  }
+
+  .submissions-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .submission-item {
+    background: var(--background-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    
+    p {
+      margin: 0.5rem 0;
+    }
+  }
+
+  .media-preview {
+    margin-top: 0.5rem;
+    
+    img, video {
+      max-width: 100%;
+      border-radius: var(--border-radius);
+      margin-top: 0.5rem;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .missions-container {
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+  }
 
   /* .patients {
     display: grid;

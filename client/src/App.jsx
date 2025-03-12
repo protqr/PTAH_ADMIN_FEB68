@@ -31,7 +31,6 @@ import {
   SoftDeleteAdmin,
   DeletePost,
   AddNotification,
-  // AddAdmin,
   AllNotification,
   SoftDeleteNotification,
   LinkHomeward
@@ -59,13 +58,8 @@ import { loader as editDoctorLoader } from "./pages/EditDoctor";
 import { action as editDoctorAction } from "./pages/EditDoctor";
 import { loader as alladminLoader } from "./pages/AllAdmin";
 import { action as deleteAdminAction } from "./pages/DeleteAdmin";
-// import { loader as allpostLoader } from "./pages/BlogManage";
-// import { action as deletePostAction } from "./pages/DeletePost";
 import { loader as allNotificationLoader } from "./pages/AllNotification";
 import { loader as editNotificationLoader, action as editNotificationAction } from "./pages/AddNotification";
-
-
-
 
 export const checkDefaultTheme = () => {
   const isDarkTheme = localStorage.getItem("darkTheme") === "true";
@@ -139,13 +133,7 @@ const router = createBrowserRouter([
           {
             path: "blogmanage",
             element: <BlogManage />,
-            // loader: allpostLoader,
           },
-          // {
-          //   path: "delete-post/:_id",
-          //   element: <DeletePost />,
-          //   action: deletePostAction,
-          // },
           {
             path: "add-user",
             element: <AddUser />,

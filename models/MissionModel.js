@@ -17,6 +17,8 @@ const MissionSchema = new mongoose.Schema(
     ],
     // บางภารกิจอาจมีการประเมิน
     isEvaluate: { type: Boolean, default: false },
+    // สถานะการลบ (soft delete)
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

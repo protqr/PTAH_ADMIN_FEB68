@@ -71,7 +71,7 @@ app.use('/api/v1/MPersonnel', authenticateUser, DoctorRouter);
 app.use("/api/v1/posts", authenticateUser, PostRouter);
 app.use("/api/v1/files", authenticateUser, FileRouter);
 app.use("/api/v1/notifications", authenticateUser, NotificationRouter);
-app.use("/api/v1/missions", missionRoutes);
+app.use("/api/v1/missions", authenticateUser, missionRoutes);
 
 // ไม่พบข้อมูล
 app.use('*', (req, res) => {

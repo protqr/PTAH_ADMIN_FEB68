@@ -1,12 +1,17 @@
+// MissionContainer.jsx
 import React from "react";
 import Wrapper from "../wrappers/PatientsContainer";
 import { useAllPostureContext } from "../../pages/AllPosture";
-import Posture from "./Posture";
+import { useNavigate } from "react-router-dom";
+import { FaEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
+import { Link, Form } from "react-router-dom";
 
 const PostureContainer = () => {
-  const { data } = useAllPostureContext();
+  const { missions } = useAllPostureContext();
+  const navigate = useNavigate();
 
-  if (!data) {
+  if (!missions) {
     return (
       <Wrapper>
         <h2>Loading...</h2>
@@ -14,12 +19,10 @@ const PostureContainer = () => {
     );
   }
 
-  const { postures } = data;
-
-  if (!postures || postures.length === 0) {
+  if (missions.length === 0) {
     return (
       <Wrapper>
-        <br /><br /><br /><h2>ไม่มีข้อมูลท่ากายภาพ</h2>
+        <br /><br /><br /><h2>ไม่มีข้อมูลภารกิจ</h2>
       </Wrapper>
     );
   }
@@ -29,15 +32,40 @@ const PostureContainer = () => {
       <table>
         <thead>
           <tr>
-            <th className="nopat">ท่าที่</th>
-            <th>ชื่อท่ากายภาพ</th>
-            <th className="mang">จัดการ</th>
+            <th>ด่านที่</th>
+            <th>ชื่อภารกิจ</th>
+            <th>การประเมิน</th>
+            <th>จำนวนท่า</th>
+            <th className="actions-header">จัดการ</th>
           </tr>
         </thead>
         <tbody>
-          {postures.map((posture) => {
-            return <Posture key={posture._id} {...posture} />;
-          })}
+          {missions.map((mission) => (
+            <tr key={mission._id}>
+              <td>{mission.no}</td>
+              <td>{mission.name}</td>
+              <td>{mission.isEvaluate ? "ประเมิน" : "ไม่ประเมิน"}</td>
+              <td>{mission.submission?.length || 0}</td>
+              <td className="actions">
+                <Link to={`/dashboard/edit-posture/${mission._id}`} className="btn edit-btn">
+                  <FaEdit />
+                </Link>
+                <Form method="post" action={`/dashboard/delete-posture/${mission._id}`}>
+                  <button
+                    type="submit"
+                    className="btn delete-btn"
+                    onClick={(e) => {
+                      if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบภารกิจนี้?")) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <MdDelete />
+                  </button>
+                </Form>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </Wrapper>

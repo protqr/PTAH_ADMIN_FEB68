@@ -79,3 +79,12 @@ export const FIREBASE_TOPIC = {
   ALL: "ALL",
   UNDER_TREATMENT: "UNDER_TREATMENT",
 };
+
+export const MISSIONS_SORT_BY = {
+  NEWEST_FIRST: "ใหม่ที่สุด",
+  OLDEST_FIRST: "เก่าสุด",
+  STAGE_ASCENDING: "เรียงตามด่าน น้อย-มาก",
+  STAGE_DESCENDING: "เรียงตามด่าน มาก-น้อย",
+  NAME_ASCENDING: "เรียงชื่อ ก-ฮ",
+  NAME_DESCENDING: "เรียงชื่อ ฮ-ก",
+};
