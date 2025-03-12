@@ -197,7 +197,7 @@ const AddPosture = () => {
             <div className="form-row">
               <label htmlFor="imageUrl" className="form-label">
                 รูปภาพประกอบ
-                <span className="optional-text">(ไม่บังคับ)</span>
+                {/* <span className="optional-text">(ไม่บังคับ)</span> */}
               </label>
               <div className="file-input-container">
                 <input
@@ -220,7 +220,7 @@ const AddPosture = () => {
             <div className="form-row">
               <label htmlFor="videoUrl" className="form-label">
                 วิดีโอสาธิต
-                <span className="optional-text">(ไม่บังคับ)</span>
+                {/* <span className="optional-text">(ไม่บังคับ)</span> */}
               </label>
               <div className="file-input-container">
                 <input
