@@ -37,7 +37,10 @@ export const action = async ({ request, params }) => {
   const { _id } = params;
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
-  console.log(data);
+  
+  // Log the data to see what's being sent
+  console.log("Form data being sent:", data);
+  console.log("Birthday value:", data.birthday);
 
   // แปลงค่าที่เลือกจาก FormRowMultiSelect เป็นอาร์เรย์ของสตริง
   // if (data.userPosts) {
@@ -60,6 +63,26 @@ export const action = async ({ request, params }) => {
 const EditPatient = () => {
   const { patient } = useLoaderData();
 
+  // Format the birthday for the date input (YYYY-MM-DD format)
+  const formatBirthday = (dateString) => {
+    if (!dateString) return "";
+    
+    try {
+      // Try to parse the date and format it as YYYY-MM-DD
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return ""; // Invalid date
+      
+      // Format as YYYY-MM-DD
+      const formattedDate = date.toISOString().split('T')[0];
+      console.log("Original birthday:", dateString);
+      console.log("Formatted birthday:", formattedDate);
+      return formattedDate;
+    } catch (error) {
+      console.error("Error formatting birthday:", error);
+      return "";
+    }
+  };
+
   const navigation = useNavigate();
   const isSubmitting = navigation.state === "submitting";
   const [selectedgender, setSelectedgender] = useState(
@@ -75,6 +98,8 @@ const EditPatient = () => {
     patient.userStatus || ""
   );
   const [postures, setPostures] = useState([]);
+  // Initialize birthday with formatted date
+  const [birthday, setBirthday] = useState(formatBirthday(patient.birthday));
 
   const [selectedYouhaveCaregiver, setSelectedYouhaveCaregiver] = useState(
     patient.youhaveCaregiver || ""
@@ -105,6 +130,11 @@ const EditPatient = () => {
     setSelectedYouhaveCaregiver(event.target.value);
   };
 
+  const handleBirthdayChange = (event) => {
+    console.log("Birthday changed to:", event.target.value);
+    setBirthday(event.target.value);
+  };
+
   const handleUserPostsChange = (selectedOptions) => {
     setSelectedUserPosts(selectedOptions.map((option) => option.value));
   };
@@ -122,6 +152,9 @@ const EditPatient = () => {
       <Form method="post" className="form">
         <h4 className="form-title">แก้ไขข้อมูลคนไข้</h4>
         <div className="form-center">
+          {/* Add a hidden input to ensure birthday is submitted with the form */}
+          <input type="hidden" name="birthday" value={birthday} />
+          
           <FormRow
             type="text"
             name="ID_card_number"
@@ -196,9 +229,10 @@ const EditPatient = () => {
               />
               <FormRow
                 type="date"
-                name="birthday"
+                name="birthdayDisplay"
                 labelText="วันเกิด"
-                defaultValue={patient.birthday}
+                value={birthday}
+                onChange={handleBirthdayChange}
               />
               <FormRow
                 type="text"

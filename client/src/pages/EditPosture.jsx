@@ -64,6 +64,9 @@ export const action = async ({ request, params }) => {
     data.imageUrls = [...data.imageUrls, ...newImageUrls];
     data.videoUrls = [...data.videoUrls, ...newVideoUrls];
 
+    // Convert isEvaluate from Thai string to boolean
+    data.isEvaluate = data.isEvaluate === "ประเมิน";
+
     console.log("Data being sent to server:", data);
 
     await customFetch.patch(`/postures/${_id}`, data);
@@ -85,9 +88,14 @@ const EditPosture = () => {
   const [videoUrls, setVideoUrls] = useState(posture.videoUrls || []);
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [newVideoFiles, setNewVideoFiles] = useState([]);
+  const [isEvaluate, setIsEvaluate] = useState(posture.isEvaluate ? "ประเมิน" : "ไม่ประเมิน");
 
   const handleUserTypeChange = (event) => {
     setSelectedUserType(event.target.value);
+  };
+
+  const handleIsEvaluateChange = (event) => {
+    setIsEvaluate(event.target.value);
   };
 
   const removeFile = (index, isImage) => {
@@ -131,12 +139,37 @@ const EditPosture = () => {
             defaultValue={posture.namePostures}
           />
 
-          <FormRow
-            type="textarea"
-            name="isEvaluate"
-            labelText="ด่านนี้มีการประเมินไหม?"
-            defaultValue={posture.isEvaluate}
-          />
+          {/* Replace text input with radio buttons for isEvaluate */}
+          <div className="form-row">
+            <label className="form-label required">การประเมิน</label>
+            <div className="radio-group evaluate-group">
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="isEvaluate"
+                  value="ประเมิน"
+                  className="radio-input"
+                  checked={isEvaluate === "ประเมิน"}
+                  onChange={handleIsEvaluateChange}
+                  required
+                />
+                <span className="radio-custom" />
+                <span className="radio-text">ประเมิน</span>
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="isEvaluate"
+                  value="ไม่ประเมิน"
+                  className="radio-input"
+                  checked={isEvaluate === "ไม่ประเมิน"}
+                  onChange={handleIsEvaluateChange}
+                />
+                <span className="radio-custom" />
+                <span className="radio-text">ไม่ประเมิน</span>
+              </label>
+            </div>
+          </div>
 
           <input type="hidden" name="imageUrls" value={imageUrls.join(",")} />
           <input type="hidden" name="videoUrls" value={videoUrls.join(",")} />

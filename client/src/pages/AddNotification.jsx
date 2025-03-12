@@ -32,6 +32,100 @@ export const loader = async ({ params }) => {
   }
 };
 
+export const action = async ({ request, params }) => {
+  const formData = await request.formData();
+  
+  try {
+    // Check if we're in edit mode by looking for an ID in the URL params or form data
+    const idFromParams = params?._id;
+    const idFromForm = formData.get("_id");
+    const isEditMode = idFromParams || idFromForm;
+    
+    // Get the targetGroup value
+    const targetGroupValue = formData.get("targetGroup");
+    
+    // Build the payload with all required fields
+    const payload = {
+      title: formData.get("title"),
+      description: formData.get("description"),
+      targetGroup: targetGroupValue, // Use the targetGroup value directly (either standard group or user name)
+      notifyType: formData.get("notifyType") || "IMPORTANT", // Default to IMPORTANT if not provided
+      notificationMode: formData.get("notificationMode") || "ทุกวัน",
+    };
+
+    // If recipients field is present, include it in the payload
+    const recipients = formData.get("recipients");
+    if (recipients) {
+      payload.recipients = recipients;
+    }
+
+    // Validation
+    if (!payload.title) {
+      toast.error("โปรดระบุหัวข้อแจ้งเตือน");
+      return null;
+    }
+
+    if (!payload.description) {
+      toast.error("โปรดระบุรายละเอียด");
+      return null;
+    }
+
+    // Handle notification mode and dates
+    if (payload.notificationMode === "ทุกวัน") {
+      const dailyTime = formData.get("dailyTime") || "00:00";
+      const [hours, minutes] = dailyTime.split(":");
+      const dateObj = dayjs()
+        .hour(parseInt(hours, 10))
+        .minute(parseInt(minutes, 10))
+        .second(0)
+        .millisecond(0);
+      payload.notifyDate = dateObj.toISOString();
+    } else {
+      const startDate = formData.get("startDate");
+      const endDate = formData.get("endDate");
+      payload.notifyDate = startDate ? dayjs(startDate).toISOString() : dayjs().toISOString();
+      payload.endDate = endDate ? dayjs(endDate).toISOString() : dayjs().add(1, "day").toISOString();
+    }
+
+    // Handle file upload if present
+    const fileInput = formData.get("file");
+    if (fileInput && fileInput.size > 0) {
+      const fileModel = await uploadFile(fileInput);
+      payload.file = {
+        id: fileModel._id,
+        name: fileModel.name,
+        url: fileModel.url,
+        size: fileModel.size,
+      };
+    } else if (formData.get("existingFile")) {
+      // If there's an existing file and no new file uploaded, keep the existing file
+      payload.file = JSON.parse(formData.get("existingFile"));
+    }
+
+    console.log("Submitting payload:", payload);
+
+    // Make the API request
+    if (isEditMode) {
+      const id = idFromParams || idFromForm;
+      console.log("Updating notification with ID:", id);
+      console.log("Payload:", JSON.stringify(payload, null, 2));
+      await customFetch.put(`/notifications/${id}`, payload);
+      toast.success("แก้ไขข้อมูลแจ้งเตือนเรียบร้อยแล้ว");
+    } else {
+      console.log("Creating new notification");
+      console.log("Payload:", JSON.stringify(payload, null, 2));
+      await customFetch.post("/notifications", payload);
+      toast.success("เพิ่มข้อมูลแจ้งเตือนเรียบร้อยแล้ว");
+    }
+
+    return redirect("/dashboard/all-notification");
+  } catch (error) {
+    console.error("Error in notification action:", error);
+    toast.error(error?.response?.data?.msg || "เกิดข้อผิดพลาด");
+    return null;
+  }
+};
+
 /**
  * 
  * @param {*} mode  add/ edit / view default=add
@@ -51,40 +145,53 @@ const AddNotification = () => {
   // notificationMode มี 2 ค่า: "ทุกวัน" หรือ "กำหนดวันสิ้นสุดแจ้งเตือน"
   // ถ้าเป็น "ทุกวัน" => ให้กรอก dailyTime
   // ถ้าเป็น "กำหนดวันสิ้นสุดแจ้งเตือน" => ให้กรอก startDate, endDate
-  const [formData, setFormData] = useState({
-    title: mode === "edit" ? existingNotiItem.title : "",
-    description: mode === "edit" ? existingNotiItem.description : "",
-    notifyDate: mode === "edit" ? existingNotiItem.notifyDate : dayjs().startOf("minute").toJSON(),
-    targetGroup: mode === "edit" ? existingNotiItem.targetGroup : NOTIFY_TARGET_GROUP.ALL,
-    file: mode === "edit" ? existingNotiItem.file : {},
-    notifyType: mode === "edit" ? existingNotiItem.notifyType : NOTIFY_TYPE.IMPORTANT,
+  const [formData, setFormData] = useState(() => {
+    // Default values for new notification
+    const defaults = {
+      title: "",
+      description: "",
+      notifyDate: dayjs().startOf("minute").toJSON(),
+      targetGroup: NOTIFY_TARGET_GROUP.ALL,
+      file: {},
+      notifyType: NOTIFY_TYPE.IMPORTANT,
+      notificationMode: "ทุกวัน",
+      dailyTime: dayjs().format("HH:mm"),
+      startDate: dayjs().toJSON(),
+      endDate: dayjs().add(1, "day").toJSON(),
+      recipients: null,
+      targetDisplayName: null
+    };
 
-    // กำหนดช่วงเผยแพร่ (dropdown)
-    notificationMode:
-      mode === "edit" && existingNotiItem.notificationMode
-        ? existingNotiItem.notificationMode
-        : "ทุกวัน", // ค่าเริ่มต้นเป็น "ทุกวัน"
+    // If in edit mode, use existing notification data
+    if (mode === "edit" && existingNotiItem) {
+      // For backward compatibility: if targetGroup is SPECIFIC_USER, we need to find the user name
+      let targetGroup = existingNotiItem.targetGroup;
+      let targetDisplayName = null;
+      
+      // If we have recipients and the targetGroup is SPECIFIC_USER, try to find the user name
+      if (existingNotiItem.recipients && existingNotiItem.targetGroup === 'SPECIFIC_USER') {
+        // We'll set targetDisplayName to null for now and let getSelectedTargetValue handle it
+        // once ptUsers are loaded
+        targetDisplayName = null;
+      }
+      
+      return {
+        title: existingNotiItem.title || defaults.title,
+        description: existingNotiItem.description || defaults.description,
+        notifyDate: existingNotiItem.notifyDate || defaults.notifyDate,
+        targetGroup: targetGroup || defaults.targetGroup,
+        file: existingNotiItem.file || defaults.file,
+        notifyType: existingNotiItem.notifyType || defaults.notifyType,
+        notificationMode: existingNotiItem.notificationMode || defaults.notificationMode,
+        dailyTime: existingNotiItem.dailyTime || defaults.dailyTime,
+        startDate: existingNotiItem.startDate || defaults.startDate,
+        endDate: existingNotiItem.endDate || defaults.endDate,
+        recipients: existingNotiItem.recipients || defaults.recipients,
+        targetDisplayName: targetDisplayName
+      };
+    }
 
-    dailyTime:
-      mode === "edit" && existingNotiItem.dailyTime
-        ? existingNotiItem.dailyTime
-        : dayjs().format("HH:mm"),
-
-    startDate:
-      mode === "edit" && existingNotiItem.startDate
-        ? existingNotiItem.startDate
-        : dayjs().toJSON(),
-
-    endDate:
-      mode === "edit" && existingNotiItem.endDate
-        ? existingNotiItem.endDate
-        : dayjs().add(1, "day").toJSON(),
-
-    // เพิ่มฟิลด์สำหรับผู้รับแจ้งเตือน (เฉพาะคนไข้ที่มี PhysicalTherapy เป็น true)
-    recipients:
-      mode === "edit" && existingNotiItem.recipients
-        ? existingNotiItem.recipients
-        : [],
+    return defaults;
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -129,82 +236,102 @@ const AddNotification = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
+  // รวม target groups และรายชื่อผู้ใช้เป็น list เดียว
+  const combinedTargetList = useMemo(() => {
+    // Add the standard target groups first
+    const list = [...Object.values(NOTIFY_TARGET_GROUP)];
+    
+    // Then add individual users with just their names (no USER: prefix)
+    if (ptUsers && ptUsers.length > 0) {
+      ptUsers.forEach(user => {
+        list.push(`${user.name} ${user.surname}`);
+      });
+    }
+    
+    return list;
+  }, [ptUsers]);
 
-    try {
-      const payload = { ...formData };
-
-      // ถ้าเป็น "ทุกวัน" => แปลง dailyTime เป็น Date ที่ mongoose รับได้
-      // สมมุติว่าใช้วันนี้เป็น base date + เวลา user เลือก
-      if (payload.notificationMode === "ทุกวัน") {
-        const [hours, minutes] = payload.dailyTime.split(":");
-        const dateObj = dayjs()
-          .hour(parseInt(hours, 10))
-          .minute(parseInt(minutes, 10))
-          .second(0)
-          .millisecond(0);
-
-        // แปลงเป็น ISO string เก็บใน notifyDate
-        payload.notifyDate = dateObj.toISOString();
-      } else {
-        // "กำหนดวันสิ้นสุดแจ้งเตือน"
-        payload.notifyDate = dayjs(payload.startDate).toISOString();
-        payload.endDate = dayjs(payload.endDate).toISOString();
+  // ฟังก์ชันสำหรับการเลือกกลุ่มเป้าหมาย/ผู้รับแจ้งเตือน
+  const handleTargetChange = (e) => {
+    const { value } = e.target;
+    
+    // Check if the selected value is a standard target group
+    if (Object.values(NOTIFY_TARGET_GROUP).includes(value)) {
+      // If a standard target group is selected
+      setFormData({
+        ...formData,
+        targetGroup: value,
+        recipients: null,
+        targetDisplayName: null
+      });
+    } else {
+      // If a user name is selected, find the corresponding user
+      const selectedUser = ptUsers.find(user => `${user.name} ${user.surname}` === value);
+      if (selectedUser) {
+        setFormData({
+          ...formData,
+          targetGroup: value, // Store the user's name directly in targetGroup
+          recipients: selectedUser._id,
+          targetDisplayName: value
+        });
       }
-
-      if (!payload.title) {
-        toast.error("โปรดระบุหัวข้อแจ้งเตือน");
-        return;
-      }
-
-      if (!payload.description) {
-        toast.error("โปรดระบุรายละเอียด");
-        return;
-      }
-
-      if (!payload.notifyDate) {
-        toast.error("โปรดระบุวันที่และเวลา");
-        return;
-      }
-
-      // Upload file ถ้ามี
-      if (payload.file.file) {
-        const fileModel = await uploadFile(formData.file.file);
-        payload.file = {
-          id: fileModel._id,
-          name: fileModel.name,
-          url: fileModel.url,
-          size: fileModel.size,
-        };
-      }
-
-      if (mode === "add") {
-        await customFetch.post("/notifications", payload);
-      } else {
-        await customFetch.put(`/notifications/${existingNotiItem._id}`, payload);
-      }
-
-      toast.success("เพิ่มข้อมูลแจ้งเตือนเรียบร้อยแล้ว");
-      return navigate("/dashboard/all-notification");
-    } catch (error) {
-      toast.error(error?.response?.data?.msg);
-      return error;
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  // รวม "ผู้ใช้ทั้งหมด" + รายชื่อผู้ใช้เป็น string ใน list เดียว
-  const userList = [
-    "ผู้ใช้ทั้งหมด",
-    ...ptUsers.map((user) => `${user.name} ${user.surname}`),
-  ];
+  // ฟังก์ชันสำหรับแสดงค่าที่เลือกในกลุ่มเป้าหมาย
+  const getSelectedTargetValue = () => {
+    // If we have a recipient ID, try to find the corresponding user
+    if (formData.recipients) {
+      // If we already have a display name, use it
+      if (formData.targetDisplayName) {
+        return formData.targetDisplayName;
+      }
+      
+      // Otherwise find the user in ptUsers
+      const user = ptUsers.find(u => u._id === formData.recipients);
+      if (user) {
+        return `${user.name} ${user.surname}`;
+      }
+    }
+    
+    // For standard target groups or if no recipient is found
+    return formData.targetGroup;
+  };
 
   return (
     <Wrapper>
-      <Form onSubmit={handleSubmit} className="form">
+      <Form 
+        method={mode === "edit" ? "PUT" : "POST"}
+        className="form"
+        encType="multipart/form-data"
+      >
+        {/* If in edit mode, include the ID as a hidden field */}
+        {mode === "edit" && (
+          <>
+            <input 
+              type="hidden" 
+              name="_id" 
+              value={existingNotiItem._id} 
+            />
+            {existingNotiItem.file && Object.keys(existingNotiItem.file).length > 0 && (
+              <input 
+                type="hidden" 
+                name="existingFile" 
+                value={JSON.stringify(existingNotiItem.file)} 
+              />
+            )}
+          </>
+        )}
+        
+        {/* Hidden input for recipients ID when a specific user is selected */}
+        {formData.targetGroup === 'SPECIFIC_USER' && formData.recipients && (
+          <input 
+            type="hidden" 
+            name="recipients" 
+            value={formData.recipients} 
+          />
+        )}
+        
         <h4 className="form-title">
           {mode === "add" ? "เพิ่ม" : "แก้ไข"}การแจ้งเตือน
         </h4>
@@ -262,13 +389,14 @@ const AddNotification = () => {
 
           {/* ส่วนอื่น ๆ เหมือนเดิม */}
           <SelectInput
-            name="recipients"
-            label="ผู้รับแจ้งเตือน (เลือกผู้ใช้ทั้งหมดหรือรายบุคคล)"
-            value={formData.recipients}
-            onChange={handleRecipientsChange}
-            // เพิ่ม "ผู้ใช้ทั้งหมด" เป็นตัวเลือกแรก
-            list={userList}
+            name="targetGroup"
+            label="กลุ่มเป้าหมาย / ผู้รับแจ้งเตือน"
+            value={getSelectedTargetValue()}
+            onChange={handleTargetChange}
+            list={combinedTargetList}
+            required
           />
+          
           <UploadFile
             name="file"
             label="ไฟล์แนบ"
@@ -281,6 +409,7 @@ const AddNotification = () => {
             value={formData.notifyType}
             onChange={handleChange}
             list={Object.values(NOTIFY_TYPE)}
+            required
           />
 
           {/* ฟิลด์สำหรับผู้รับแจ้งเตือน (ptUsers) */}
