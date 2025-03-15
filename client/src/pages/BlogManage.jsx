@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaTrash, FaUserCircle } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import AllHeader from "../assets/components/AllHeader.jsx";
@@ -9,6 +10,8 @@ const BlogManage = () => {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -73,35 +76,50 @@ const BlogManage = () => {
 
       {/* แสดงรายการโพสต์ */}
       {filteredPosts.length > 0 ? (
-        filteredPosts.map((post) => (
-          <div
-            key={post._id}
-            className="border p-6 rounded-lg shadow-lg bg-white mb-6"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-lg font-semibold">{post.title}</div>
-              <div className="text-sm text-gray-400">
-                {new Date(post.createdAt).toLocaleString()}
-              </div>
-            </div>
-            <p className="text-gray-700 mb-4">{post.content}</p>
-            <div className="text-sm text-gray-500 mb-2 flex items-center">
-              <FaUserCircle className="h-6 w-6 text-gray-500 mr-2" />
-              <span className="font-semibold">{post.postedBy}</span>
-            </div>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => handleDelete(post._id)}
-                className="flex items-center text-red-500 font-semibold hover:text-red-700"
-              >
-                <FaTrash className="mr-1 h-4 w-4" /> ลบกระทู้
-              </button>
-            </div>
-          </div>
-        ))
-      ) : (
-        <p>ไม่พบกระทู้ที่ตรงกับคำค้นหา</p>
-      )}
+  filteredPosts.map((post) => (
+    <div
+      key={post._id}
+      className="border p-6 rounded-lg shadow-lg bg-white mb-6 cursor-pointer"
+      onClick={() =>
+        navigate("/dashboard/respond-blog", { state: { post } })
+      }
+    >
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-semibold">{post.title}</div>
+        <div className="text-sm text-gray-400">
+          {new Date(post.createdAt).toLocaleString()}
+        </div>
+      </div>
+      <p className="text-gray-700 mb-4">
+        {post.content.substring(0, 100)}...
+      </p>
+      <p className="text-blue-700 mb-4">#{post.tag}</p>
+
+      <div className="text-sm text-gray-500 mb-2 flex items-center">
+        <span className="font-semibold">
+          {post.postedBy
+            ? post.postedBy.nametitle
+              ? `${post.postedBy.nametitle} ${post.postedBy.name} ${post.postedBy.surname}`
+              : `${post.postedBy.name} ${post.postedBy.surname}`
+            : "ผู้โพสต์ไม่ทราบ"}
+        </span>
+      </div>
+
+      {/* ปุ่มลบโพสต์ */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation(); // ป้องกันการคลิกที่ div หลัก
+          handleDelete(post._id);
+        }}
+        className="text-red-600 hover:text-red-800 flex items-center"
+      >
+        <FaTrash className="mr-2" /> ลบกระทู้
+      </button>
+    </div>
+  ))
+) : (
+  <p>ไม่พบกระทู้ที่ตรงกับคำค้นหา</p>
+)}
     </div>
   );
 };

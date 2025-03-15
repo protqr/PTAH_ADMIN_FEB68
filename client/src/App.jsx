@@ -33,7 +33,7 @@ import {
   AddNotification,
   AllNotification,
   SoftDeleteNotification,
-  LinkHomeward
+  LinkHomeward,
 } from "./pages";
 
 import { action as registerAction } from "./pages/Register";
@@ -60,6 +60,7 @@ import { loader as alladminLoader } from "./pages/AllAdmin";
 import { action as deleteAdminAction } from "./pages/DeleteAdmin";
 import { loader as allNotificationLoader } from "./pages/AllNotification";
 import { loader as editNotificationLoader, action as editNotificationAction } from "./pages/AddNotification";
+import RespondBlog from "./pages/RespondBlog";
 
 export const checkDefaultTheme = () => {
   const isDarkTheme = localStorage.getItem("darkTheme") === "true";
@@ -133,6 +134,10 @@ const router = createBrowserRouter([
           {
             path: "blogmanage",
             element: <BlogManage />,
+          },
+          {
+            path:"respond-blog",
+            element: <RespondBlog/>,
           },
           {
             path: "add-user",
