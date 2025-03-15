@@ -54,7 +54,8 @@ export const POSTURES_SORT_BY = {
 };
 
 export const NOTIFY_TARGET_GROUP = {
-  ALL: "ผู้ใช้ทั้งหมด",
+  ALL: "news",
+  // ALL: "ผู้ใช้ทั้งหมด",
   UNDER_TREATMENT: "ผู้ป่วยที่มีสถานะกำลังรักษาอยู่",
 };
 
