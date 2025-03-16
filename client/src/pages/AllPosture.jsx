@@ -39,6 +39,9 @@ const AllPosture = () => {
   return (
     <AllPostureContext.Provider value={{ missions: data.missions || [], searchValues }}>
       <AddButton className="mx-3" onClick={() => navigate("/dashboard/add-posture")}><b>+</b> เพิ่มท่ากายภาพ</AddButton>
+            {/* <SoftDelete onClick={() => navigate("/dashboard/history-deleted-posture")}>
+              <MdOutlineAutoDelete />
+            </SoftDelete> */}
       <AllHeader>ภารกิจทั้งหมด</AllHeader>
       <MissionContainer />
     </AllPostureContext.Provider>
