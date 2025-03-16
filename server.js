@@ -20,6 +20,8 @@ import PostRouter from "./routes/PostRouter.js";
 import FileRouter from "./routes/FileRouter.js";
 import NotificationRouter from "./routes/NotificationRouter.js";
 import missionRoutes from "./routes/MissionRouter.js";
+import CaregiverRouter from "./routes/CaregiverRouter.js";
+
 
 // Middleware
 import errorHandlerMiddleware from "./middleware/errorHandlerMiddleware.js";
@@ -86,6 +88,7 @@ app.use("/api/v1/posts", authenticateUser, PostRouter);
 app.use("/api/v1/files", authenticateUser, FileRouter);
 app.use("/api/v1/notifications", authenticateUser, NotificationRouter);
 app.use("/api/v1/missions", authenticateUser, missionRoutes);
+app.use("/api/v1/caregiver",authenticateUser, CaregiverRouter);
 
 // ไม่พบข้อมูล
 app.use("*", (req, res) => res.status(404).json({ msg: "Not Found" }));

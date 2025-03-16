@@ -1,260 +1,186 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Wrapper from "../assets/wrappers/DashboardFormPage";
 import { Form, redirect, useNavigation } from "react-router-dom";
 import { toast } from "react-toastify";
 import customFetch from "../utils/customFetch";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebase-config";
-import { TYPEPOSTURES } from "../../../utils/constants";
 
-// ฟังก์ชันอัปโหลดไฟล์เดี่ยวไปยัง Firebase
 const uploadFileToFirebase = async (file, path) => {
-  if (!file) return "";
-  try {
-    const storageRef = ref(storage, `${path}/${file.name}`);
-    const snapshot = await uploadBytes(storageRef, file);
-    return await getDownloadURL(snapshot.ref);
-  } catch (error) {
-    console.error("Error uploading to Firebase:", error);
-    throw error;
-  }
+    if (!file) return "";
+    try {
+        const storageRef = ref(storage, `${path}/${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        return await getDownloadURL(snapshot.ref);
+    } catch (error) {
+        console.error("Error uploading to Firebase:", error);
+        throw error;
+    }
 };
 
-// Action ที่จะถูกเรียกเมื่อกด "ส่งข้อมูล"
 export const action = async ({ request }) => {
-  try {
-    const formData = await request.formData();
+    try {
+        const formData = await request.formData();
 
-    const postureType = formData.get("postureType");     // ประเภทของท่า (จาก dropdown)
-    const missionName = formData.get("name");          // ชื่อภารกิจ (สำหรับ Submission)
-    const noString = formData.get("no");               // ด่านที่ (1..5)
-    const isEvaluateText = formData.get("isEvaluate"); // "ประเมิน" หรือ "ไม่ประเมิน"
+        const missionName = formData.get("name");
+        const subMissionName = formData.get("subName");
+        const noString = formData.get("no");
+        const isEvaluateText = formData.get("isEvaluate");
 
-    console.log("isEvaluateText:", isEvaluateText);
-    console.log("isEvaluateText === 'ประเมิน':", isEvaluateText === "ประเมิน");
+        const imageFile = formData.get("imageUrl");
+        const videoFile = formData.get("videoUrl");
 
-    // Handle file uploads
-    const imageFile = formData.get("imageUrl");
-    const videoFile = formData.get("videoUrl");
+        const imageUrl = imageFile && imageFile.size > 0 ? await uploadFileToFirebase(imageFile, `missions/${noString}/images`) : "";
+        const videoUrl = videoFile && videoFile.size > 0 ? await uploadFileToFirebase(videoFile, `missions/${noString}/videos`) : "";
 
-    const imageUrl = imageFile && imageFile.size > 0
-      ? await uploadFileToFirebase(imageFile, `missions/${noString}/images`)
-      : "";
-    const videoUrl = videoFile && videoFile.size > 0
-      ? await uploadFileToFirebase(videoFile, `missions/${noString}/videos`)
-      : "";
+        const isEvaluated = isEvaluateText === "ประเมิน";
+        const submission = {
+            subName: subMissionName,
+            evaluate: isEvaluated,
+            imageUrl,
+            videoUrl,
+        };
 
-    // Prepare submission data
-    const isEvaluated = isEvaluateText === "ประเมิน";
-    const submission = {
-      name: missionName,
-      postureType,
-      evaluate: isEvaluated,
-      imageUrl,
-      videoUrl,
-    };
+        const missionData = {
+            no: noString,
+            name: missionName,
+            isEvaluate: isEvaluated,
+            submissionsData: submission
+        };
 
-    // Prepare mission data with submission
-    const missionData = {
-      no: noString,
-      name: postureType,
-      isEvaluate: isEvaluated,
-      submissionsData: [submission] // This will be used to create the submission
-    };
-
-    console.log("Submission data:", submission);
-    console.log("Mission data:", missionData);
-
-    // Create both mission and submission using the combined endpoint
-    const response = await customFetch.post("/missions/create-with-sub", missionData);
-    console.log("Server response:", response.data);
-    
-    toast.success("สร้างท่ากายภาพ/mission เรียบร้อยแล้ว");
-    return redirect("/dashboard/all-posture");
-  } catch (error) {
-    console.error("Error in action:", error);
-    toast.error(error?.response?.data?.msg || "เกิดข้อผิดพลาด กรุณาลองใหม่");
-    return null;
-  }
+        await customFetch.post("/missions", missionData);
+        toast.success("สร้างท่ากายภาพ/mission เรียบร้อยแล้ว");
+        return redirect("/dashboard/all-posture");
+    } catch (error) {
+        console.error("Error in action:", error);
+        toast.error(error?.response?.data?.msg || "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        return null;
+    }
 };
 
 const AddPosture = () => {
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
-  const [imagePreview, setImagePreview] = useState("");
-  const [videoPreview, setVideoPreview] = useState("");
+    const navigation = useNavigation();
+    const isSubmitting = navigation.state === "submitting";
 
-  // แสดงตัวอย่างรูป
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
-  };
+    const [model, setModel] = useState([]);
 
-  // แสดงตัวอย่างวิดีโอ
-  const handleVideoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setVideoPreview(reader.result);
-    reader.readAsDataURL(file);
-  };
+    const [imagePreview, setImagePreview] = useState("");
+    const [videoPreview, setVideoPreview] = useState("");
 
-  return (
-    <Wrapper>
-      <Form method="post" className="form" encType="multipart/form-data">
-        <h4 className="form-title">เพิ่มท่ากายภาพ / Mission</h4>
-        
-        <div className="form-center">
-          {/* ประเภทของท่า (First field) */}
-          <div className="form-row">
-            <label htmlFor="postureType" className="form-label required">
-              ประเภทของท่า
-            </label>
-            <select 
-              id="postureType" 
-              name="postureType" 
-              className="form-select"
-              required
-            >
-              <option value="">-- เลือกประเภทของท่า --</option>
-              {Object.values(TYPEPOSTURES).map((type, index) => (
-                <option key={index} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
+    const handleImageChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => setImagePreview(reader.result);
+        reader.readAsDataURL(file);
+    };
 
-          {/* ชื่อภารกิจ */}
-          <div className="form-row">
-            <label htmlFor="name" className="form-label required">
-              ชื่อภารกิจ (Submission)
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              className="form-input"
-              placeholder="กรุณาระบุชื่อภารกิจ"
-              required
-            />
-          </div>
+    const handleVideoChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => setVideoPreview(reader.result);
+        reader.readAsDataURL(file);
+    };
 
-          {/* ด่านที่ */}
-          <div className="form-row">
-            <label className="form-label required">ด่านที่</label>
-            <div className="radio-group stage-group">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <label key={num} className="radio-label stage-label">
-                  <input
-                    type="radio"
-                    name="no"
-                    value={num}
-                    className="radio-input"
-                    required
-                  />
-                  <span className="radio-custom" />
-                  <span className="radio-text">ด่านที่ {num}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+    return (
+        <Wrapper>
+            <Form method="post" className="form" encType="multipart/form-data">
+                <h4 className="form-title">เพิ่มท่ากายภาพ / Mission</h4>
+                <div className="form-center">
+                    <div className="form-row">
+                        <label htmlFor="name" className="form-label required">ด่านที่</label>
+                        <input type="text" id="name" name="name" value={model.no} className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
+                    </div>
 
-          {/* การประเมิน */}
-          <div className="form-row">
-            <label className="form-label required">การประเมิน</label>
-            <div className="radio-group evaluate-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="isEvaluate"
-                  value="ประเมิน"
-                  className="radio-input"
-                  required
-                />
-                <span className="radio-custom" />
-                <span className="radio-text">ประเมิน</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="isEvaluate"
-                  value="ไม่ประเมิน"
-                  className="radio-input"
-                />
-                <span className="radio-custom" />
-                <span className="radio-text">ไม่ประเมิน</span>
-              </label>
-            </div>
-          </div>
+                    <div className="form-row">
+                        <label htmlFor="subName" className="form-label required">ชื่อภารกิจ (Submission)</label>
+                        <input type="text" id="subName" name="subName" className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
+                    </div>
 
-          {/* Media Upload Section */}
-          <div className="media-section">
-            {/* รูปภาพ */}
-            <div className="form-row">
-              <label htmlFor="imageUrl" className="form-label">
-                รูปภาพประกอบ
-                {/* <span className="optional-text">(ไม่บังคับ)</span> */}
-              </label>
-              <div className="file-input-container">
-                <input
-                  type="file"
-                  id="imageUrl"
-                  name="imageUrl"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="form-file-input"
-                />
-                {imagePreview && (
-                  <div className="preview-container">
-                    <img src={imagePreview} alt="preview" className="preview-image" />
-                  </div>
-                )}
-              </div>
-            </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-lg font-semibold text-gray-700">การประเมิน</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="isEvaluate" value="ประเมิน" className="hidden peer" checked={model.isEvaluate === true} onChange={() => setModel({ ...model, isEvaluate: true })} required />
+                                <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center peer-checked:border-blue-500">
+                                    <div className="w-3 h-3 bg-blue-500 rounded-full peer-checked:scale-100 scale-0 transition-transform"></div>
+                                </div>
+                                <span className="text-gray-700 peer-checked:text-blue-600">ประเมิน</span>
+                            </label>
 
-            {/* วิดีโอ */}
-            <div className="form-row">
-              <label htmlFor="videoUrl" className="form-label">
-                วิดีโอสาธิต
-                {/* <span className="optional-text">(ไม่บังคับ)</span> */}
-              </label>
-              <div className="file-input-container">
-                <input
-                  type="file"
-                  id="videoUrl"
-                  name="videoUrl"
-                  accept="video/*"
-                  onChange={handleVideoChange}
-                  className="form-file-input"
-                />
-                {videoPreview && (
-                  <div className="preview-container">
-                    <video 
-                      src={videoPreview} 
-                      className="preview-video" 
-                      controls
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="isEvaluate" value="ไม่ประเมิน" className="hidden peer" checked={model.isEvaluate === false} onChange={() => setModel({ ...model, isEvaluate: false })} />
+                                <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center peer-checked:border-red-500">
+                                    <div className="w-3 h-3 bg-red-500 rounded-full peer-checked:scale-100 scale-0 transition-transform"></div>
+                                </div>
+                                <span className="text-gray-700 peer-checked:text-red-600">ไม่ประเมิน</span>
+                            </label>
+                        </div>
+                    </div>
 
-          <button
-            type="submit"
-            className="btn btn-block form-btn submit-btn"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
-          </button>
-        </div>
-      </Form>
-    </Wrapper>
-  );
+
+                    <div className="space-y-6">
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="imageUrl" className="text-lg font-semibold text-gray-700">
+                                รูปภาพประกอบ
+                            </label>
+                            <label className="flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition">
+                                <input
+                                    type="file"
+                                    id="imageUrl"
+                                    name="imageUrl"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                />
+                                <span className="text-gray-600">เลือกไฟล์รูปภาพ</span>
+                            </label>
+                            {imagePreview && (
+                                <div className="mt-2 flex justify-center">
+                                    <img
+                                        src={imagePreview}
+                                        alt="preview"
+                                        className="w-full max-w-xs rounded-lg border border-gray-300 shadow-sm"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="videoUrl" className="text-lg font-semibold text-gray-700">
+                                วิดีโอสาธิต
+                            </label>
+                            <label className="flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition">
+                                <input
+                                    type="file"
+                                    id="videoUrl"
+                                    name="videoUrl"
+                                    accept="video/*"
+                                    onChange={handleVideoChange}
+                                    className="hidden"
+                                />
+                                <span className="text-gray-600">เลือกไฟล์วิดีโอ</span>
+                            </label>
+                            {videoPreview && (
+                                <div className="mt-2 flex justify-center">
+                                    <video
+                                        src={videoPreview}
+                                        className="w-full max-w-md rounded-lg border border-gray-300 shadow-sm"
+                                        controls
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <button type="submit" className="btn btn-block form-btn submit-btn" disabled={isSubmitting}>
+                        {isSubmitting ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                    </button>
+                </div>
+            </Form>
+        </Wrapper>
+    );
 };
 
 export default AddPosture;

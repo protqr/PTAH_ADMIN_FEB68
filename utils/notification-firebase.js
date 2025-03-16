@@ -18,6 +18,7 @@ const getAccessToken = async () => {
 
     const { token } = await jwtClient.getAccessToken();
     return token;
+  
   } catch (error) {
     console.error("Error getting Access Token:", error);
     throw new Error("Failed to get Access Token");

@@ -60,25 +60,13 @@ const PatientSchema = new mongoose.Schema(
     isEmailVerified: { type: Boolean, default: false },
 
     // ข้อมูลผู้ดูแล
-    youhaveCaregiver: {
-      type: String,
-      enum: Object.values(HAVECAREGIVER),
-      default: null,
-    },
-    nameCaregiver: String, // ชื่อผู้ดูแล
-    lastnameCaregiver: String, // นามสกุลผู้ดูแล
-    telCaregiver: String, // เบอร์โทรผู้ดูแล
-    caregiverRelations: {
-      type: String,
-      enum: Object.values(RELATIONS), // กำหนดเป็นค่าที่เลือกจาก radio button
-      required: true,
-    },
-    otherRelations: {
-      type: String,
-      required: function () {
-        return this.relations === RELATIONS.OTHER; // ต้องกรอกข้อมูลเมื่อเลือก 'อื่นๆ'
-      },
-    },
+        // หากต้องการอ้างอิงข้อมูลผู้ดูแล (หากมีหลายคนสามารถใช้ Array ได้)
+        caregivers: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Caregiver",
+          },
+        ],
   },
   {
     collection: "User",
