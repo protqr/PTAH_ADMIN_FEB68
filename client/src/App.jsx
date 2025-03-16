@@ -29,11 +29,11 @@ import {
   SoftDeletePatient,
   SoftDeleteDoctor,
   SoftDeleteAdmin,
-  DeletePost,
   AddNotification,
   AllNotification,
   SoftDeleteNotification,
-  LinkHomeward
+  LinkHomeward,
+  AddPostureById
 } from "./pages";
 
 import { action as registerAction } from "./pages/Register";
@@ -46,6 +46,7 @@ import { action as editPatientAction } from "./pages/EditPatient";
 import { action as deletePatientAction } from "./pages/DeletePatient";
 import { loader as statsLoader } from "./pages/Stats";
 import { loader as adminLoader } from "./pages/Admin";
+import { action as addPostureByIdAction } from "./pages/AddPostureById";
 import { action as addPostureAction } from "./pages/AddPosture";
 import { loader as allpostureLoader } from "./pages/AllPosture";
 import { action as deletePostureAction } from "./pages/DeletePosture";
@@ -60,6 +61,7 @@ import { loader as alladminLoader } from "./pages/AllAdmin";
 import { action as deleteAdminAction } from "./pages/DeleteAdmin";
 import { loader as allNotificationLoader } from "./pages/AllNotification";
 import { loader as editNotificationLoader, action as editNotificationAction } from "./pages/AddNotification";
+import RespondBlog from "./pages/RespondBlog";
 
 export const checkDefaultTheme = () => {
   const isDarkTheme = localStorage.getItem("darkTheme") === "true";
@@ -95,11 +97,6 @@ const router = createBrowserRouter([
         loader: dashboardLoader,
         children: [
           {
-            path: "add-posture",
-            element: <AddPosture />,
-            action: addPostureAction,
-          },
-          {
             index: true,
             path: "/dashboard",
             element: <Stats />,
@@ -109,6 +106,16 @@ const router = createBrowserRouter([
             path: "all-posture",
             element: <AllPosture />,
             loader: allpostureLoader,
+          },
+          {
+            path: "add-posture",
+            element: <AddPosture />,
+            action: addPostureAction,
+          },
+          {
+            path: "add-posture/:_id",
+            element: <AddPostureById />,
+            action: addPostureByIdAction,
           },
           {
             path: "edit-posture/:_id",
@@ -133,6 +140,10 @@ const router = createBrowserRouter([
           {
             path: "blogmanage",
             element: <BlogManage />,
+          },
+          {
+            path:"respond-blog",
+            element: <RespondBlog/>,
           },
           {
             path: "add-user",

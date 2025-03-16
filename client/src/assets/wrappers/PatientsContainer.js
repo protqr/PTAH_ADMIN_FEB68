@@ -81,7 +81,7 @@ const Wrapper = styled.section`
     background-color: #f1f1f1;
     color: #ff6a6a;
     border: 1px solid #ff6a6a;
-    font-size: medium;
+    margin-bottom: 5px;
   }
 
   /* แต่งแบบปุ่มเพิ่มเติม */
