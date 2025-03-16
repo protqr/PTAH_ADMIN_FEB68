@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FormRow } from '../assets/components';
 import Wrapper from '../assets/wrappers/DashboardFormPage';
 import { useLoaderData } from 'react-router-dom';
-import { TYPEPOSTURES } from '../../../utils/constants';
 import { Form, useNavigate, redirect } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import customFetch from '../utils/customFetch';
@@ -48,14 +47,14 @@ export const action = async ({ request, params }) => {
       throw new Error('Invalid ID');
     }
 
-    // Prepare mission data (removed type field)
     const missionData = {
       name: data.name,
       no: data.no,
       isEvaluate: data.isEvaluate === "ประเมิน"
     };
 
-    // Prepare submissions data
+    console.log("missionData:", missionData);
+
     const submissionUpdates = formData.getAll('submissionIds').map((id, index) => ({
       _id: id,
       name: formData.getAll('submissionNames')[index],
@@ -64,7 +63,6 @@ export const action = async ({ request, params }) => {
       videoUrl: formData.getAll('submissionVideoUrls')[index] || ""
     }));
 
-    // Handle new files for each submission
     for (let i = 0; i < submissionUpdates.length; i++) {
       const submissionId = submissionUpdates[i]._id;
       const newImages = formData.getAll(`newImageUrls_${submissionId}`).filter(file => file.size > 0);
@@ -81,7 +79,6 @@ export const action = async ({ request, params }) => {
       }
     }
 
-    // Update mission and submissions
     await customFetch.patch(`/missions/${_id}`, {
       ...missionData,
       submissionUpdates
@@ -102,6 +99,7 @@ const EditPosture = () => {
   const isSubmitting = navigation.state === 'submitting';
   const [isEvaluate, setIsEvaluate] = useState(mission.isEvaluate ? "ประเมิน" : "ไม่ประเมิน");
   const [submissions, setSubmissions] = useState(mission.submission || []);
+  const [openSubmissions, setOpenSubmissions] = useState(new Array(submissions.length).fill(false));
 
   const handleIsEvaluateChange = (event) => {
     setIsEvaluate(event.target.value);
@@ -117,7 +115,6 @@ const EditPosture = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Preview will be handled by the existing preview elements
     const submission = submissions.find(s => s._id === submissionId);
     if (submission) {
       handleSubmissionChange(
@@ -128,6 +125,27 @@ const EditPosture = () => {
     }
   };
 
+  const toggleSubmission = (index) => {
+    const updatedOpenSubmissions = [...openSubmissions];
+    updatedOpenSubmissions[index] = !updatedOpenSubmissions[index];
+    setOpenSubmissions(updatedOpenSubmissions);
+  };
+
+  const deleteSubmission = async (submissionId) => {
+    if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบท่านี้?")) {
+      return;
+    }
+    try {
+      const missionId = mission._id;
+      await customFetch.delete(`/missions/${missionId}/submissions/${submissionId}`);
+      setSubmissions(submissions.filter(sub => sub._id !== submissionId));
+      toast.success("ลบท่าเรียบร้อยแล้ว");
+    } catch (error) {
+      console.error("Error deleting submission:", error);
+      toast.error(error?.response?.data?.msg || "เกิดข้อผิดพลาดในการลบ");
+    }
+  };
+
   return (
     <Wrapper>
       <Form method="post" className="form" encType="multipart/form-data">
@@ -135,7 +153,7 @@ const EditPosture = () => {
           <h4 className="form-title">แก้ไขข้อมูลภารกิจ</h4>
           <div className="form-center">
             {/* Mission Fields */}
-            <div className="mission-fields" style={{ 
+            <div className="mission-fields" style={{
               backgroundColor: 'var(--background-secondary-color)',
               padding: '2rem',
               borderRadius: 'var(--border-radius)',
@@ -143,65 +161,48 @@ const EditPosture = () => {
             }}>
               <h5 style={{ marginBottom: '1.5rem', color: 'var(--primary-500)' }}>ข้อมูลภารกิจ</h5>
 
-              <FormRow
-                type="text"
-                name="name"
-                labelText="ชื่อภารกิจ"
-                defaultValue={mission.name}
-              />
-
-              <FormRow
-                type="number"
-                name="no"
-                labelText="ด่านที่"
-                defaultValue={mission.no}
-              />
+              <div className="form-row">
+                <label htmlFor="name" className="form-label required">ด่านที่</label>
+                <input type="text" id="name" name="name" disabled value={mission.no} className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
+              </div>
 
               <div className="form-row">
-                <label className="form-label required">การประเมิน</label>
-                <div className="radio-group evaluate-group">
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="isEvaluate"
-                      value="ประเมิน"
-                      className="radio-input"
-                      checked={isEvaluate === "ประเมิน"}
-                      onChange={handleIsEvaluateChange}
-                      required
-                    />
-                    <span className="radio-custom" />
-                    <span className="radio-text">ประเมิน</span>
+                <label htmlFor="postureType" className="form-label required">ประเภทของท่า</label>
+                <select disabled id="postureType" name="postureType" className="form-select" required>
+                  <option>{mission.name}</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-lg font-semibold text-gray-700">การประเมิน</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="isEvaluate" value="ประเมิน" className="hidden peer" checked={isEvaluate === "ประเมิน"} onChange={handleIsEvaluateChange} required />
+                    <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center peer-checked:border-blue-500">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full peer-checked:scale-100 scale-0 transition-transform"></div>
+                    </div>
+                    <span className="text-gray-700 peer-checked:text-blue-600">ประเมิน</span>
                   </label>
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="isEvaluate"
-                      value="ไม่ประเมิน"
-                      className="radio-input"
-                      checked={isEvaluate === "ไม่ประเมิน"}
-                      onChange={handleIsEvaluateChange}
-                    />
-                    <span className="radio-custom" />
-                    <span className="radio-text">ไม่ประเมิน</span>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="isEvaluate" value="ไม่ประเมิน" className="hidden peer" checked={isEvaluate === "ไม่ประเมิน"} onChange={handleIsEvaluateChange} />
+                    <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center peer-checked:border-red-500">
+                      <div className="w-3 h-3 bg-red-500 rounded-full peer-checked:scale-100 scale-0 transition-transform"></div>
+                    </div>
+                    <span className="text-gray-700 peer-checked:text-red-600">ไม่ประเมิน</span>
                   </label>
                 </div>
               </div>
+
             </div>
 
-            {/* Submissions Section */}
             <div className="submissions-section" style={{
               backgroundColor: 'var(--background-secondary-color)',
               padding: '2rem',
               borderRadius: 'var(--border-radius)'
             }}>
-              <h5 style={{ 
-                marginBottom: '1.5rem', 
-                color: 'var(--primary-500)',
-                borderBottom: '2px solid var(--primary-300)',
-                paddingBottom: '0.5rem'
-              }}>ท่ากายภาพในภารกิจ</h5>
-              
+              <h5 style={{ marginBottom: '1.5rem', color: 'var(--primary-500)', borderBottom: '2px solid var(--primary-300)', paddingBottom: '0.5rem' }}>ท่ากายภาพในภารกิจ</h5>
+
               {submissions.map((submission, index) => (
                 <div key={submission._id} className="submission-item" style={{
                   border: '1px solid var(--grey-100)',
@@ -210,99 +211,115 @@ const EditPosture = () => {
                   marginBottom: '1.5rem',
                   backgroundColor: 'var(--white)'
                 }}>
-                  <h6 style={{ 
+                  <h6 style={{
                     marginBottom: '1rem',
                     color: 'var(--primary-400)'
-                  }}>ท่าที่ {index + 1}</h6>
-                  
-                  <input type="hidden" name="submissionIds" value={submission._id} />
-                  
-                  <FormRow
-                    type="text"
-                    name="submissionNames"
-                    labelText={`ชื่อท่า`}
-                    defaultValue={submission.name}
-                    onChange={(e) => handleSubmissionChange(index, 'name', e.target.value)}
-                  />
-
-                  <div className="form-row">
-                    <label className="form-label">การประเมิน</label>
-                    <input
-                      type="hidden"
-                      name="submissionEvaluates"
-                      value={submission.evaluate}
-                    />
-                    <div className="radio-group">
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          value="true"
-                          checked={submission.evaluate}
-                          onChange={() => handleSubmissionChange(index, 'evaluate', true)}
-                        />
-                        <span className="radio-text">ประเมิน</span>
-                      </label>
-                      <label className="radio-label">
-                        <input
-                          type="radio"
-                          value="false"
-                          checked={!submission.evaluate}
-                          onChange={() => handleSubmissionChange(index, 'evaluate', false)}
-                        />
-                        <span className="radio-text">ไม่ประเมิน</span>
-                      </label>
+                  }} className='flex justify-between'>
+                    ท่าที่ {index + 1}
+                    <div className='flex gap-8'>
+                      <button type="button" onClick={() => toggleSubmission(index)}
+                        style={{ backgroundColor: 'transparent', border: 'none', color: 'var(--primary-400)', cursor: 'pointer' }}>
+                        {openSubmissions[index] ? 'ซ่อน' : 'แสดง'}
+                      </button>
+                      <button type="button" onClick={() => deleteSubmission(submission._id)}
+                        style={{ backgroundColor: 'transparent', border: 'none', color: 'var(--primary-400)', cursor: 'pointer' }}>
+                        ลบ
+                      </button>
                     </div>
-                  </div>
+                  </h6>
 
-                  <div className="media-section">
-                    <div className="form-row">
-                      <label className="form-label">รูปภาพ</label>
-                      <input
-                        type="file"
-                        name={`newImageUrls_${submission._id}`}
-                        onChange={(e) => handleFileChange(submission._id, 'image', e)}
-                        accept="image/*"
-                      />
-                      <input
-                        type="hidden"
-                        name="submissionImageUrls"
-                        value={submission.imageUrl || ""}
-                      />
-                      {submission.imageUrl && (
-                        <div className="preview-container">
-                          <img
-                            src={submission.imageUrl}
-                            alt="Preview"
-                            style={{ maxWidth: '200px', marginTop: '1rem' }}
-                          />
+                  {openSubmissions[index] && (
+                    <>
+                      <input type="hidden" name="submissionIds" value={submission._id} />
+
+                      <FormRow type="text" name="submissionNames" labelText={`ชื่อท่า`} defaultValue={submission.name}
+                        onChange={(e) => handleSubmissionChange(index, 'name', e.target.value)} />
+
+                      {/* <div className="flex flex-col gap-2">
+                        <label className="text-lg font-semibold text-gray-700">การประเมิน</label>
+                        <input type="hidden" name="submissionEvaluates" value={submission.evaluate} />
+
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name={`submissionEvaluate-${index}`} value="true" checked={submission.evaluate}
+                              onChange={() => handleSubmissionChange(index, 'evaluate', true)} className="hidden peer" />
+                            <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center peer-checked:border-blue-500">
+                              <div className="w-3 h-3 bg-blue-500 rounded-full peer-checked:scale-100 scale-0 transition-transform"></div>
+                            </div>
+                            <span className="text-gray-700 peer-checked:text-blue-600">ประเมิน</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name={`submissionEvaluate-${index}`} value="false" checked={!submission.evaluate}
+                              onChange={() => handleSubmissionChange(index, 'evaluate', false)} className="hidden peer" />
+                            <div className="w-5 h-5 border-2 border-gray-400 rounded-full flex items-center justify-center peer-checked:border-red-500">
+                              <div className="w-3 h-3 bg-red-500 rounded-full peer-checked:scale-100 scale-0 transition-transform"></div>
+                            </div>
+                            <span className="text-gray-700 peer-checked:text-red-600">ไม่ประเมิน</span>
+                          </label>
                         </div>
-                      )}
-                    </div>
+                      </div> */}
 
-                    <div className="form-row">
-                      <label className="form-label">วิดีโอ</label>
-                      <input
-                        type="file"
-                        name={`newVideoUrls_${submission._id}`}
-                        onChange={(e) => handleFileChange(submission._id, 'video', e)}
-                        accept="video/*"
-                      />
-                      <input
-                        type="hidden"
-                        name="submissionVideoUrls"
-                        value={submission.videoUrl || ""}
-                      />
-                      {submission.videoUrl && (
-                        <div className="preview-container">
-                          <video
-                            src={submission.videoUrl}
-                            controls
-                            style={{ maxWidth: '200px', marginTop: '1rem' }}
+                      <div className="space-y-6">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-lg font-semibold text-gray-700">รูปภาพ</label>
+                          <label className="flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition">
+                            <input
+                              type="file"
+                              name={`newImageUrls_${submission._id}`}
+                              onChange={(e) => handleFileChange(submission._id, 'image', e)}
+                              accept="image/*"
+                              className="hidden"
+                            />
+                            <span className="text-gray-600">เลือกไฟล์รูปภาพ</span>
+                          </label>
+                          <input
+                            type="hidden"
+                            name="submissionImageUrls"
+                            value={submission.imageUrl || ""}
                           />
+                          {submission.imageUrl && (
+                            <div className="mt-2 flex justify-center">
+                              <img
+                                src={submission.imageUrl}
+                                alt="Preview"
+                                className="w-full max-w-xs rounded-lg border border-gray-300 shadow-sm"
+                              />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-lg font-semibold text-gray-700">วิดีโอ</label>
+                          <label className="flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition">
+                            <input
+                              type="file"
+                              name={`newVideoUrls_${submission._id}`}
+                              onChange={(e) => handleFileChange(submission._id, 'video', e)}
+                              accept="video/*"
+                              className="hidden"
+                            />
+                            <span className="text-gray-600">เลือกไฟล์วิดีโอ</span>
+                          </label>
+                          <input
+                            type="hidden"
+                            name="submissionVideoUrls"
+                            value={submission.videoUrl || ""}
+                          />
+                          {submission.videoUrl && (
+                            <div className="mt-2 flex justify-center">
+                              <video
+                                src={submission.videoUrl}
+                                className="w-full max-w-md rounded-lg border border-gray-300 shadow-sm"
+                                controls
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                    </>
+                  )}
                 </div>
               ))}
             </div>

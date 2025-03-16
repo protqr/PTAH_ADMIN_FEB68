@@ -67,6 +67,7 @@ const Wrapper = styled.table`
     background-color: #f1f1f1;
     color: #ff6a6a;
     border: 1px solid #ff6a6a;
+    margin-bottom: 5px;
   }
 `;
 

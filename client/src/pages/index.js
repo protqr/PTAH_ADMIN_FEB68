@@ -6,6 +6,7 @@ export { default as Login } from "./Login";
 export { default as Error } from "./Error";
 export { default as Stats } from "./Stats";
 export { default as AllPosture } from "./AllPosture";
+export { default as AddPostureById } from "./AddPostureById";
 export { default as AddPosture } from "./AddPosture";
 export { default as EditPosture } from "./EditPosture";
 export { default as AddUser } from "./AddUser";
