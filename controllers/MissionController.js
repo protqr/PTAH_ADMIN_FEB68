@@ -14,36 +14,15 @@ export const getAllMissions = async (req, res) => {
 };
 
 export const createMission = async (req, res) => {
-  const { no, name, isEvaluate, submissionsData } = req.body;
-
-  let missionNo = no;
-  if (missionNo == null) {
-    const lastMission = await Mission.findOne({}, {}, { sort: { no: -1 } });
-    missionNo = lastMission ? lastMission.no + 1 : 1;
-  }
-
+  const { no, name, isEvaluate, } = req.body;
+  console.log(req.body);
   const newMission = new Mission({
-    no: missionNo,
+    no: no,
     name,
     isEvaluate
   });
 
-  const resMission = await newMission.save();
-
-  if (resMission) {
-    const submissionToCreate = {
-      name: submissionsData.subName,
-      videoUrl: submissionsData.videoUrl || "",
-      imageUrl: submissionsData.imageUrl || "",
-      evaluate: submissionsData.evaluate
-    };
-
-    const submission = await Submission.create(submissionToCreate);
-    const mission = await Mission.updateOne(
-      { _id: resMission._id },
-      { $push: { submission: submission._id } }
-    );
-  }
+  await newMission.save();
 
   res.status(StatusCodes.CREATED).json({
     msg: "Mission created successfully"
