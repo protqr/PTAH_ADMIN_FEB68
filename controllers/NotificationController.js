@@ -7,7 +7,7 @@ import {
   NOTIFY_TARGET_GROUP,
 } from "../utils/constants.js";
 import admin from "firebase-admin";
-import { sendFcmMessage } from "../utils/notification-firebase.js";
+// import { sendFcmMessage } from "../utils/notification-firebase.js";
 
 export const getAllNotifications = async (req, res) => {
   const { search, sort, isDeleted } = req.query;

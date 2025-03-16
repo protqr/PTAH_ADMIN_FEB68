@@ -5,6 +5,8 @@ import MissionContainer from "../assets/components/PostureContainer.jsx";
 import AddButton from "../assets/components/AddButton.jsx";
 import AllHeader from "../assets/components/AllHeader.jsx";
 import { useLoaderData, useNavigate } from "react-router-dom";
+import { MdOutlineAutoDelete } from "react-icons/md";
+import SoftDelete from "../assets/components/SoftDelete.jsx";
 
 export const loader = async ({ request }) => {
   const params = Object.fromEntries([...new URL(request.url).searchParams.entries()]);
@@ -38,10 +40,10 @@ const AllPosture = () => {
 
   return (
     <AllPostureContext.Provider value={{ missions: data.missions || [], searchValues }}>
-      <AddButton className="mx-3" onClick={() => navigate("/dashboard/add-posture")}><b>+</b> เพิ่มท่ากายภาพ</AddButton>
-            {/* <SoftDelete onClick={() => navigate("/dashboard/history-deleted-posture")}>
-              <MdOutlineAutoDelete />
-            </SoftDelete> */}
+      <SoftDelete onClick={() => navigate("/dashboard/history-deleted-posture")}>
+        <MdOutlineAutoDelete />
+      </SoftDelete>
+      <AddButton className="mx-3" onClick={() => navigate("/dashboard/add-posture")}><b>+</b> เพิ่มด่านกายภาพ</AddButton>
       <AllHeader>ภารกิจทั้งหมด</AllHeader>
       <MissionContainer />
     </AllPostureContext.Provider>

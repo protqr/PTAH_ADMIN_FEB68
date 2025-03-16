@@ -42,7 +42,7 @@ export const action = async ({ request }) => {
         };
 
         const missionData = {
-            no: noString,
+            no: noString || 0,
             name: missionName,
             isEvaluate: isEvaluated,
             submissionsData: submission
@@ -86,16 +86,16 @@ const AddPosture = () => {
     return (
         <Wrapper>
             <Form method="post" className="form" encType="multipart/form-data">
-                <h4 className="form-title">เพิ่มท่ากายภาพ / Mission</h4>
+                <h4 className="form-title">เพิ่มด่านกายภาพ / Mission</h4>
                 <div className="form-center">
                     <div className="form-row">
-                        <label htmlFor="name" className="form-label required">ด่านที่</label>
-                        <input type="text" id="name" name="name" value={model.no} className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
+                        <label htmlFor="no" className="form-label required">ด่านที่</label>
+                        <input type="text" id="no" name="no" value={model.no} className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
                     </div>
 
                     <div className="form-row">
-                        <label htmlFor="subName" className="form-label required">ชื่อภารกิจ (Submission)</label>
-                        <input type="text" id="subName" name="subName" className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
+                        <label htmlFor="name" className="form-label required">ชื่อภารกิจ</label>
+                        <input type="text" id="name" name="name" className="form-input" placeholder="กรุณาระบุชื่อภารกิจ" required />
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -116,61 +116,6 @@ const AddPosture = () => {
                                 </div>
                                 <span className="text-gray-700 peer-checked:text-red-600">ไม่ประเมิน</span>
                             </label>
-                        </div>
-                    </div>
-
-
-                    <div className="space-y-6">
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="imageUrl" className="text-lg font-semibold text-gray-700">
-                                รูปภาพประกอบ
-                            </label>
-                            <label className="flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition">
-                                <input
-                                    type="file"
-                                    id="imageUrl"
-                                    name="imageUrl"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="hidden"
-                                />
-                                <span className="text-gray-600">เลือกไฟล์รูปภาพ</span>
-                            </label>
-                            {imagePreview && (
-                                <div className="mt-2 flex justify-center">
-                                    <img
-                                        src={imagePreview}
-                                        alt="preview"
-                                        className="w-full max-w-xs rounded-lg border border-gray-300 shadow-sm"
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor="videoUrl" className="text-lg font-semibold text-gray-700">
-                                วิดีโอสาธิต
-                            </label>
-                            <label className="flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition">
-                                <input
-                                    type="file"
-                                    id="videoUrl"
-                                    name="videoUrl"
-                                    accept="video/*"
-                                    onChange={handleVideoChange}
-                                    className="hidden"
-                                />
-                                <span className="text-gray-600">เลือกไฟล์วิดีโอ</span>
-                            </label>
-                            {videoPreview && (
-                                <div className="mt-2 flex justify-center">
-                                    <video
-                                        src={videoPreview}
-                                        className="w-full max-w-md rounded-lg border border-gray-300 shadow-sm"
-                                        controls
-                                    />
-                                </div>
-                            )}
                         </div>
                     </div>
 
