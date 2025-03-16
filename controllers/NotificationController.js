@@ -1,8 +1,13 @@
 import { StatusCodes } from "http-status-codes";
 import NotificationModel from "../models/NotificationModel.js";
 import { BadRequestError, NotFoundError } from "../errors/customError.js";
-import { FIREBASE_TOPIC, NOTIFY_STATUS, NOTIFY_TARGET_GROUP } from "../utils/constants.js";
+import {
+  FIREBASE_TOPIC,
+  NOTIFY_STATUS,
+  NOTIFY_TARGET_GROUP,
+} from "../utils/constants.js";
 import admin from "firebase-admin";
+import { sendFcmMessage } from "../utils/notification-firebase.js";
 
 export const getAllNotifications = async (req, res) => {
   const { search, sort, isDeleted } = req.query;
@@ -164,7 +169,7 @@ export const deleteNotification = async (req, res) => {
 
     const notiItem = await NotificationModel.findByIdAndUpdate(
       _id,
-      { isDeleted: true, deletedAt: new Date(), },
+      { isDeleted: true, deletedAt: new Date() },
       { new: true }
     );
 
@@ -195,7 +200,7 @@ export const findNotification = async (req, res) => {
 };
 
 export const checkNotifications = async () => {
-  console.log("🚀  checkNotifications: checking...")
+  console.log("🚀  checkNotifications: checking...");
   const now = new Date();
   try {
     const notifications = await NotificationModel.find({
@@ -209,7 +214,7 @@ export const checkNotifications = async () => {
 
       // Update the status to "Sent"
       notiItem.status = NOTIFY_STATUS.SENT;
-      await notiItem.save();
+      // await notiItem.save();
     }
   } catch (error) {
     console.error("Error checking notifications:", error);
@@ -222,12 +227,15 @@ export const sendPushNotification = async (notiItem) => {
       title: notiItem.title,
       body: notiItem.description,
     },
-    topic: notiItem.targetGroup === NOTIFY_TARGET_GROUP.ALL ?
-      FIREBASE_TOPIC.ALL : FIREBASE_TOPIC.UNDER_TREATMENT
+    topic: "news",
+    // notiItem.targetGroup === NOTIFY_TARGET_GROUP.ALL
+    //   ? FIREBASE_TOPIC.ALL
+    //   : FIREBASE_TOPIC.UNDER_TREATMENT,
   };
 
   try {
-    await admin.messaging().send(message);
+    await sendFcmMessage(message);
+
     console.log(`Notification sent: ${notiItem.title}`);
   } catch (error) {
     console.error("Error sending notification:", error);
